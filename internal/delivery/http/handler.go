@@ -103,16 +103,16 @@ func (h *Handler) DeviceDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) PowerCalc(w http.ResponseWriter, r *http.Request) {
-	base, cooled := h.Calculator.CalculateTotalPower(*h.Order)
+	base, calculated := h.Calculator.CalculateTotalPower(*h.Order)
 	devices := h.Calculator.GetDevicesInOrder(*h.Order)
 
 	data := map[string]interface{}{
-		"Order":       h.Order,
-		"BasePower":   base,
-		"CooledPower": cooled,
-		"Devices":     devices,
-		"TotalItems":  len(h.Order.DeviceIDs),
-		"MinIOURL":    h.MinIOURL,
+		"Order":      h.Order,
+		"BasePower":  base,
+		"PUEPower":   calculated,
+		"Devices":    devices,
+		"TotalItems": len(h.Order.DeviceIDs),
+		"MinIOURL":   h.MinIOURL,
 	}
 
 	h.render(w, "calc.html", data)
