@@ -1,0 +1,43 @@
+{{ define "content" }}
+<div class="container">
+    <section class="search-section">
+        <h1 class="page-title">Список оборудования</h1>
+        <form class="search-form" action="/" method="GET">
+            <input type="text" name="q" value="{{ .SearchQuery }}" placeholder="Поиск оборудования..."
+                class="search-input">
+            <button type="submit" class="search-button">Найти</button>
+        </form>
+        <div class="header-controls-spaced">
+            <div class="current-calculation">
+                <span class="calculation-label">Текущий расчёт</span>
+                <span class="calculation-count">(устройств: {{ .TotalItems }})</span>
+                <a href="/power-calc" class="calculation-link">Посмотреть</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="devices-grid">
+        {{ range .Devices }}
+        <div class="device-card">
+            <div class="device-image">
+                <img src="{{ $.MinIOURL }}/{{ .ImageURL }}" alt="{{ .Name }}"
+                    onerror="this.src='/static/placeholder.jpeg'" class="device-image-img">
+            </div>
+            <div class="device-info">
+                <h3 class="device-name">{{ .Name }}</h3>
+                <p class="device-power">Мощность: {{ .PowerWatt }} Вт</p>
+            </div>
+            <div class="device-actions">
+                <a href="/device/{{ .ID }}" class="details-button">Подробнее</a>
+            </div>
+        </div>
+        {{ end }}
+    </section>
+
+    {{ if not .Devices }}
+    <div class="no-results">
+        <p>Оборудование не найдено. Попробуйте изменить поисковый запрос.</p>
+    </div>
+    {{ end }}
+</div>
+{{ end }}

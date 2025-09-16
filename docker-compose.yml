@@ -1,0 +1,19 @@
+services:
+  minio:
+    image: quay.io/minio/minio:RELEASE.2022-10-15T19-57-03Z
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin # Дефолты
+    volumes:
+      - minio-data:/data
+      - ./config:/root/.minio
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
+volumes:
+  minio-data:
+    name: minio_data_volume
