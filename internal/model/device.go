@@ -8,9 +8,3 @@ type Device struct {
 	ImageURL    string `json:"image_url"`
 	Category    string `json:"category"` // сервер, СХД, ...
 }
-
-type Order struct {
-	ID        int    `json:"id"`
-	DeviceIDs []int  `json:"device_ids"`
-	CreatedAt string `json:"created_at"`
-}
