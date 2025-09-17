@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -20,9 +21,9 @@ func NewHandler(calculator *usecase.PowerCalculator) *Handler {
 	return &Handler{
 		Calculator: calculator,
 		Order: &model.Order{
-			ID:        1001,
+			ID:        1,
 			DeviceIDs: []int{1, 2},
-			CreatedAt: "2025-03-01 12:00",
+			CreatedAt: "13.09.2025 12:00",
 		},
 		MinIOURL: "http://localhost:9000/devices",
 	}
@@ -91,7 +92,6 @@ func (h *Handler) DeviceDetail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Device not found", http.StatusNotFound)
 		return
 	}
-
 	data := map[string]interface{}{
 		"Device":     device,
 		"Order":      h.Order,
@@ -105,7 +105,7 @@ func (h *Handler) DeviceDetail(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) PowerCalc(w http.ResponseWriter, r *http.Request) {
 	base, calculated := h.Calculator.CalculateTotalPower(*h.Order)
 	devices := h.Calculator.GetDevicesInOrder(*h.Order)
-
+	fmt.Println(h.Order)
 	data := map[string]interface{}{
 		"Order":      h.Order,
 		"BasePower":  base,
