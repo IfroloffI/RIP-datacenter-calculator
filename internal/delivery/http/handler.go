@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"datacenter-calc/config"
 	"datacenter-calc/internal/model"
 	"datacenter-calc/internal/usecase"
 )
@@ -15,10 +16,10 @@ type Handler struct {
 	MinIOURL   string
 }
 
-func NewHandler(calculator *usecase.PowerCalculator) *Handler {
+func NewHandler(calculator *usecase.PowerCalculator, cfg *config.Config) *Handler {
 	return &Handler{
 		Calculator: calculator,
-		MinIOURL:   "http://127.0.0.1:9000/devices",
+		MinIOURL:   cfg.MinIO.URL + cfg.MinIO.Bucket,
 	}
 }
 

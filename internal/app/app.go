@@ -1,6 +1,7 @@
 package app
 
 import (
+	"datacenter-calc/config"
 	"datacenter-calc/internal/db"
 	appHttp "datacenter-calc/internal/delivery/http"
 	"datacenter-calc/internal/repo"
@@ -13,8 +14,8 @@ type App struct {
 	httpServer *http.Server
 }
 
-func New() *App {
-	dbConn, err := db.Connect()
+func New(cfg *config.Config) *App {
+	dbConn, err := db.Connect(cfg)
 	if err != nil {
 		log.Fatal("Не удалось подключиться к БД:", err)
 	}
@@ -23,7 +24,7 @@ func New() *App {
 	orderRepo := &repo.OrderRepository{DB: dbConn}
 
 	calculator := usecase.NewPowerCalculator(deviceRepo, orderRepo)
-	handler := appHttp.NewHandler(calculator)
+	handler := appHttp.NewHandler(calculator, cfg)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", handler.Devices)

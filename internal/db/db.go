@@ -1,14 +1,24 @@
 package db
 
 import (
+	"datacenter-calc/config"
 	"datacenter-calc/internal/model"
+	"fmt"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func Connect() (*gorm.DB, error) {
-	dsn := "host=127.0.0.1 user=postgres password=secret dbname=rip port=8082 sslmode=disable"
+func Connect(cfg *config.Config) (*gorm.DB, error) {
+	dsn := fmt.Sprintf(
+		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s",
+		cfg.DB.Host,
+		cfg.DB.User,
+		cfg.DB.Password,
+		cfg.DB.Name,
+		cfg.DB.Port,
+		cfg.DB.SSLMode,
+	)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, err
