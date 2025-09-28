@@ -18,30 +18,23 @@ func NewPowerCalculator(deviceRepo *repo.DeviceRepository, orderRepo *repo.Order
 }
 
 func (c *PowerCalculator) GetCurrentOrder() model.Order {
-	order := c.OrderRepo.GetCurrentOrder()
+	userID := uint(1)
+	order := c.OrderRepo.GetDraftByUser(userID)
 	if order == nil {
-		return model.Order{}
+		order = c.OrderRepo.CreateDraft(userID)
 	}
 	return *order
 }
 
 func (c *PowerCalculator) CalculateTotalPower(order model.Order) (base int, calculated int) {
 	var total int
-	for _, id := range order.DeviceIDs {
-		if dev := c.DeviceRepo.GetByID(id); dev != nil {
-			total += dev.PowerWatt
-		}
+	for _, dev := range order.Devices {
+		total += dev.PowerWatt
 	}
 	delta := int(float64(total) * 0.5)
 	return total, total + delta
 }
 
 func (c *PowerCalculator) GetDevicesInOrder(order model.Order) []model.Device {
-	var devices []model.Device
-	for _, id := range order.DeviceIDs {
-		if dev := c.DeviceRepo.GetByID(id); dev != nil {
-			devices = append(devices, *dev)
-		}
-	}
-	return devices
+	return order.Devices
 }

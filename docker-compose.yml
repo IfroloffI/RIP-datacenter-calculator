@@ -13,7 +13,27 @@ services:
       - ./config:/root/.minio
     command: server /data --console-address ":9001"
     restart: unless-stopped
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: rip
+    ports:
+      - "5481:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
 
 volumes:
   minio-data:
     name: minio_data_volume
+  postgres_data:
+    name: rip-psgre-volume

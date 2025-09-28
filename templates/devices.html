@@ -9,7 +9,7 @@
         </form>
         <div class="header-controls-spaced">
             <a href="/power-calc" class="current-calculation">
-                <img src="/static/basket.png" alt="Bucket" class="calculation-bucket" width="50" height="50">
+                <img src="/static/basket.png" alt="Bucket" width="50" height="50">
                 <span class="calculation-count">{{ .TotalItems }}</span>
             </a>
         </div>
@@ -28,6 +28,10 @@
             </div>
             <div class="device-actions">
                 <a href="/device/{{ .ID }}" class="details-button">Подробнее</a>
+                <form method="POST" action="/order/add-device" style="margin:0;">
+                    <input type="hidden" name="device_id" value="{{ .ID }}">
+                    <button type="submit" class="add-button">В корзину</button>
+                </form>
             </div>
         </div>
         {{ end }}

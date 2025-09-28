@@ -18,7 +18,7 @@ type Handler struct {
 func NewHandler(calculator *usecase.PowerCalculator) *Handler {
 	return &Handler{
 		Calculator: calculator,
-		MinIOURL:   "http://localhost:9000/devices",
+		MinIOURL:   "http://127.0.0.1:9000/devices",
 	}
 }
 
@@ -45,14 +45,14 @@ func (h *Handler) getCurrentOrderData() map[string]interface{} {
 	order := h.Calculator.GetCurrentOrder()
 	return map[string]interface{}{
 		"Order":      order,
-		"TotalItems": len(order.DeviceIDs),
+		"TotalItems": len(order.Devices),
 		"MinIOURL":   h.MinIOURL,
 	}
 }
 
 func (h *Handler) Devices(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
-	all := h.Calculator.DeviceRepo.GetAll()
+	all := h.Calculator.DeviceRepo.GetAllActive()
 
 	var filtered []model.Device
 	if query != "" {
@@ -75,14 +75,13 @@ func (h *Handler) Devices(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) DeviceDetail(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Path[len("/device/"):]
-
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
 
-	device := h.Calculator.DeviceRepo.GetByID(id)
+	device := h.Calculator.DeviceRepo.GetByID(uint(id))
 	if device == nil {
 		http.Error(w, "Device not found", http.StatusNotFound)
 		return
@@ -105,4 +104,34 @@ func (h *Handler) PowerCalc(w http.ResponseWriter, r *http.Request) {
 	data["Devices"] = devices
 
 	h.render(w, "calc.html", data)
+}
+
+func (h *Handler) AddDeviceToOrder(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	deviceID, err := strconv.Atoi(r.FormValue("device_id"))
+	if err != nil {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	order := h.Calculator.GetCurrentOrder()
+	h.Calculator.OrderRepo.AddDeviceToOrder(uint(order.ID), uint(deviceID), 1)
+
+	http.Redirect(w, r, "/power-calc", http.StatusSeeOther)
+}
+
+func (h *Handler) DeleteOrder(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	order := h.Calculator.GetCurrentOrder()
+	h.Calculator.OrderRepo.SoftDeleteOrderSQL(uint(order.ID))
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

@@ -32,9 +32,6 @@
                     <span class="result-label">Годовое потребление:</span>
                     <span class="result-value">[Расчёт отключен]</span>
                 </div>
-                <div class="device-actions">
-                    <a href="https://google.com" class="calc-button">Расчитать</a>
-                </div>
             </div>
         </div>
 
@@ -57,7 +54,7 @@
                     </div>
                     <div class="device-field">
                         <label>Количество</label>
-                        <input type="number" value="1" min="1" class="quantity-input" disabled>
+                        <div class="device-quantity-display">1</div>
                     </div>
                     <div class="device-field">
                         <label>Промежуточная Мощность</label>
@@ -69,6 +66,13 @@
             {{ else }}
             <p class="no-devices">Нет устройств в расчёте</p>
             {{ end }}
+        </div>
+
+        <div class="calculation-actions">
+            <form method="POST" action="/order/delete">
+                <button type="submit" class="details-button" style="background:#ff4d4d;color:white;">Удалить
+                    заявку</button>
+            </form>
         </div>
     </section>
 </div>
