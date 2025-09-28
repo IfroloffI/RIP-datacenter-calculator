@@ -8,11 +8,10 @@
             <button type="submit" class="search-button">Найти</button>
         </form>
         <div class="header-controls-spaced">
-            <div class="current-calculation">
-                <span class="calculation-label">Текущий расчёт</span>
-                <span class="calculation-count">(устройств: {{ .TotalItems }})</span>
-                <a href="/power-calc" class="calculation-link">Посмотреть</a>
-            </div>
+            <a href="/power-calc" class="current-calculation">
+                <img src="/static/basket.png" alt="Bucket" class="calculation-bucket" width="50" height="50">
+                <span class="calculation-count">{{ .TotalItems }}</span>
+            </a>
         </div>
     </section>
 
