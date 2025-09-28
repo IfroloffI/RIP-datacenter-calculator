@@ -26,7 +26,8 @@
                 <h3 class="section-label">Итоговые показатели</h3>
                 <div class="result-item">
                     <span class="result-label">Итоговая мощность дата-центра:</span>
-                    <span class="result-value">{{ .PUEPower }} кВт</span>
+                    <span class="result-value">[Расчёт отключен]</span>
+                    <!-- <span class="result-value">{{ .PUEPower }} кВт</span> !-->
                 </div>
                 <div class="result-item">
                     <span class="result-label">Годовое потребление:</span>
@@ -54,11 +55,11 @@
                     </div>
                     <div class="device-field">
                         <label>Количество</label>
-                        <div class="device-quantity-display">1</div>
+                        <div class="device-quantity-display">{{ .Count }}</div>
                     </div>
                     <div class="device-field">
                         <label>Промежуточная Мощность</label>
-                        <div class="device-total-power">{{ .PowerWatt }} Вт</div>
+                        <div class="device-total-power">{{ .InterPowerWatt }} Вт</div>
                     </div>
                 </div>
                 {{ end }}

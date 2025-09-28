@@ -9,3 +9,9 @@ type Device struct {
 	Category    string `gorm:"not null"`
 	IsDeleted   bool   `gorm:"not null;default:false"`
 }
+
+type DeviceWithQuantityAndIPW struct {
+	Device
+	Count          int
+	InterPowerWatt int
+}

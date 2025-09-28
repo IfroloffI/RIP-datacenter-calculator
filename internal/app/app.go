@@ -30,7 +30,7 @@ func New() *App {
 	mux.HandleFunc("/device/", handler.DeviceDetail)
 	mux.HandleFunc("/power-calc", handler.PowerCalc)
 	mux.HandleFunc("/order/add-device", handler.AddDeviceToOrder)
-	mux.HandleFunc("/order/delete-device", handler.DeleteOrder)
+	mux.HandleFunc("/order/delete", handler.DeleteOrder)
 	mux.Handle("/static/", http.StripPrefix("/static/", handler.ServeStatic()))
 
 	server := &http.Server{

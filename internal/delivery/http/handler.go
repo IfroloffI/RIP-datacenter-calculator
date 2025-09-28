@@ -41,11 +41,11 @@ func (h *Handler) render(w http.ResponseWriter, tmpl string, data interface{}) {
 	}
 }
 
-func (h *Handler) getCurrentOrderData() map[string]interface{} {
-	order := h.Calculator.GetCurrentOrder()
+func (h *Handler) getCommonData() map[string]interface{} {
+	userID := uint(1)
+	totalItems := h.Calculator.OrderRepo.GetTotalItemsInDraft(userID)
 	return map[string]interface{}{
-		"Order":      order,
-		"TotalItems": len(order.Devices),
+		"TotalItems": totalItems,
 		"MinIOURL":   h.MinIOURL,
 	}
 }
@@ -66,7 +66,7 @@ func (h *Handler) Devices(w http.ResponseWriter, r *http.Request) {
 		filtered = all
 	}
 
-	data := h.getCurrentOrderData()
+	data := h.getCommonData()
 	data["Devices"] = filtered
 	data["SearchQuery"] = query
 
@@ -87,21 +87,41 @@ func (h *Handler) DeviceDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data := h.getCurrentOrderData()
+	data := h.getCommonData()
 	data["Device"] = device
 
 	h.render(w, "device.html", data)
 }
 
 func (h *Handler) PowerCalc(w http.ResponseWriter, r *http.Request) {
-	order := h.Calculator.GetCurrentOrder()
-	base, calculated := h.Calculator.CalculateTotalPower(order)
-	devices := h.Calculator.GetDevicesInOrder(order)
+	userID := uint(1)
+	draft := h.Calculator.OrderRepo.GetDraftByUser(userID)
+	if draft == nil {
+		data := h.getCommonData()
+		data["Order"] = model.Order{Status: model.StatusDraft, CreatedBy: userID}
+		data["BasePower"] = 0
+		data["PUEPower"] = 0
+		data["Devices"] = []model.DeviceWithQuantityAndIPW{}
+		data["PUE"] = 1.5
+		h.render(w, "calc.html", data)
+		return
+	}
 
-	data := h.getCurrentOrderData()
+	order, err := h.Calculator.OrderRepo.GetOrderWithDevices(draft.ID)
+	if err != nil {
+		http.Error(w, "Order load error", http.StatusInternalServerError)
+		return
+	}
+
+	devices := h.Calculator.GetDevicesInOrder(*order)
+	base, calculated := h.Calculator.CalculateTotalPower(devices, 1.5)
+
+	data := h.getCommonData()
+	data["Order"] = *order
 	data["BasePower"] = base
 	data["PUEPower"] = calculated
 	data["Devices"] = devices
+	data["PUE"] = 1.5
 
 	h.render(w, "calc.html", data)
 }
@@ -118,8 +138,13 @@ func (h *Handler) AddDeviceToOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order := h.Calculator.GetCurrentOrder()
-	h.Calculator.OrderRepo.AddDeviceToOrder(uint(order.ID), uint(deviceID), 1)
+	userID := uint(1)
+	draft := h.Calculator.OrderRepo.GetDraftByUser(userID)
+	if draft == nil {
+		draft = h.Calculator.OrderRepo.CreateDraft(userID)
+	}
+
+	h.Calculator.OrderRepo.AddDeviceToOrder(draft.ID, uint(deviceID), 1)
 
 	http.Redirect(w, r, "/power-calc", http.StatusSeeOther)
 }
@@ -130,8 +155,11 @@ func (h *Handler) DeleteOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order := h.Calculator.GetCurrentOrder()
-	h.Calculator.OrderRepo.SoftDeleteOrderSQL(uint(order.ID))
+	userID := uint(1)
+	draft := h.Calculator.OrderRepo.GetDraftByUser(userID)
+	if draft != nil {
+		h.Calculator.OrderRepo.SoftDeleteOrderSQL(draft.ID)
+	}
 
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

@@ -37,7 +37,7 @@ func (r *OrderRepository) AddDeviceToOrder(orderID, deviceID uint, quantity int)
 	return r.DB.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "order_id"}, {Name: "device_id"}},
 		DoUpdates: clause.Assignments(map[string]interface{}{
-			"quantity": gorm.Expr("quantity + ?", quantity),
+			"quantity": gorm.Expr("order_devices.quantity + ?", quantity),
 		}),
 	}).Create(&od).Error
 }
@@ -50,4 +50,13 @@ func (r *OrderRepository) GetOrderWithDevices(orderID uint) (*model.Order, error
 
 func (r *OrderRepository) SoftDeleteOrderSQL(orderID uint) error {
 	return r.DB.Exec("UPDATE orders SET status = 'deleted' WHERE id = ?", orderID).Error
+}
+
+func (r *OrderRepository) GetTotalItemsInDraft(userID uint) int {
+	var count int64
+	r.DB.Table("order_devices").
+		Joins("JOIN orders ON orders.id = order_devices.order_id").
+		Where("orders.created_by = ? AND orders.status = ?", userID, model.StatusDraft).
+		Count(&count)
+	return int(count)
 }

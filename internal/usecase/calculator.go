@@ -17,24 +17,34 @@ func NewPowerCalculator(deviceRepo *repo.DeviceRepository, orderRepo *repo.Order
 	}
 }
 
-func (c *PowerCalculator) GetCurrentOrder() model.Order {
-	userID := uint(1)
-	order := c.OrderRepo.GetDraftByUser(userID)
-	if order == nil {
-		order = c.OrderRepo.CreateDraft(userID)
-	}
-	return *order
-}
-
-func (c *PowerCalculator) CalculateTotalPower(order model.Order) (base int, calculated int) {
+func (c *PowerCalculator) CalculateTotalPower(devices []model.DeviceWithQuantityAndIPW, pue float64) (base int, calculated int) {
 	var total int
-	for _, dev := range order.Devices {
-		total += dev.PowerWatt
+	for _, d := range devices {
+		total += d.PowerWatt * d.Count
 	}
-	delta := int(float64(total) * 0.5)
-	return total, total + delta
+	base = total
+	calculated = int(float64(total) * pue)
+	return base, calculated
 }
 
-func (c *PowerCalculator) GetDevicesInOrder(order model.Order) []model.Device {
-	return order.Devices
+func (c *PowerCalculator) GetDevicesInOrder(order model.Order) []model.DeviceWithQuantityAndIPW {
+	var result []model.DeviceWithQuantityAndIPW
+
+	var orderDevices []model.OrderDevice
+	c.DeviceRepo.DB.Where("order_id = ?", order.ID).Find(&orderDevices)
+
+	quantityMap := make(map[uint]int)
+	for _, od := range orderDevices {
+		quantityMap[od.DeviceID] = od.Quantity
+	}
+
+	for _, dev := range order.Devices {
+		result = append(result, model.DeviceWithQuantityAndIPW{
+			Device:         dev,
+			Count:          quantityMap[dev.ID],
+			InterPowerWatt: quantityMap[dev.ID] * dev.PowerWatt,
+		})
+	}
+
+	return result
 }
