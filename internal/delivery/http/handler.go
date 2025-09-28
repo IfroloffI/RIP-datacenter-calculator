@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 	"strconv"
@@ -13,19 +12,13 @@ import (
 
 type Handler struct {
 	Calculator *usecase.PowerCalculator
-	Order      *model.Order
 	MinIOURL   string
 }
 
 func NewHandler(calculator *usecase.PowerCalculator) *Handler {
 	return &Handler{
 		Calculator: calculator,
-		Order: &model.Order{
-			ID:        1,
-			DeviceIDs: []int{1, 2},
-			CreatedAt: "13.09.2025 12:00",
-		},
-		MinIOURL: "http://localhost:9000/devices",
+		MinIOURL:   "http://localhost:9000/devices",
 	}
 }
 
@@ -40,20 +33,26 @@ func (h *Handler) render(w http.ResponseWriter, tmpl string, data interface{}) {
 		return
 	}
 
-	var buf strings.Builder
-	err = t.ExecuteTemplate(&buf, "base.html", data)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	err = t.ExecuteTemplate(w, "base.html", data)
 	if err != nil {
 		http.Error(w, "Render error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Write([]byte(buf.String()))
+func (h *Handler) getCurrentOrderData() map[string]interface{} {
+	order := h.Calculator.GetCurrentOrder()
+	return map[string]interface{}{
+		"Order":      order,
+		"TotalItems": len(order.DeviceIDs),
+		"MinIOURL":   h.MinIOURL,
+	}
 }
 
 func (h *Handler) Devices(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
-	all := h.Calculator.Repo.GetAll()
+	all := h.Calculator.DeviceRepo.GetAll()
 
 	var filtered []model.Device
 	if query != "" {
@@ -67,13 +66,9 @@ func (h *Handler) Devices(w http.ResponseWriter, r *http.Request) {
 		filtered = all
 	}
 
-	data := map[string]interface{}{
-		"Devices":     filtered,
-		"Order":       h.Order,
-		"TotalItems":  len(h.Order.DeviceIDs),
-		"MinIOURL":    h.MinIOURL,
-		"SearchQuery": query,
-	}
+	data := h.getCurrentOrderData()
+	data["Devices"] = filtered
+	data["SearchQuery"] = query
 
 	h.render(w, "devices.html", data)
 }
@@ -87,33 +82,27 @@ func (h *Handler) DeviceDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	device := h.Calculator.Repo.GetByID(id)
+	device := h.Calculator.DeviceRepo.GetByID(id)
 	if device == nil {
 		http.Error(w, "Device not found", http.StatusNotFound)
 		return
 	}
-	data := map[string]interface{}{
-		"Device":     device,
-		"Order":      h.Order,
-		"TotalItems": len(h.Order.DeviceIDs),
-		"MinIOURL":   h.MinIOURL,
-	}
+
+	data := h.getCurrentOrderData()
+	data["Device"] = device
 
 	h.render(w, "device.html", data)
 }
 
 func (h *Handler) PowerCalc(w http.ResponseWriter, r *http.Request) {
-	base, calculated := h.Calculator.CalculateTotalPower(*h.Order)
-	devices := h.Calculator.GetDevicesInOrder(*h.Order)
-	fmt.Println(h.Order)
-	data := map[string]interface{}{
-		"Order":      h.Order,
-		"BasePower":  base,
-		"PUEPower":   calculated,
-		"Devices":    devices,
-		"TotalItems": len(h.Order.DeviceIDs),
-		"MinIOURL":   h.MinIOURL,
-	}
+	order := h.Calculator.GetCurrentOrder()
+	base, calculated := h.Calculator.CalculateTotalPower(order)
+	devices := h.Calculator.GetDevicesInOrder(order)
+
+	data := h.getCurrentOrderData()
+	data["BasePower"] = base
+	data["PUEPower"] = calculated
+	data["Devices"] = devices
 
 	h.render(w, "calc.html", data)
 }

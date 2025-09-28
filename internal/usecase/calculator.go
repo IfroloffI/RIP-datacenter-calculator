@@ -6,17 +6,29 @@ import (
 )
 
 type PowerCalculator struct {
-	Repo *repo.DeviceRepository
+	DeviceRepo *repo.DeviceRepository
+	OrderRepo  *repo.OrderRepository
 }
 
-func NewPowerCalculator(repo *repo.DeviceRepository) *PowerCalculator {
-	return &PowerCalculator{Repo: repo}
+func NewPowerCalculator(deviceRepo *repo.DeviceRepository, orderRepo *repo.OrderRepository) *PowerCalculator {
+	return &PowerCalculator{
+		DeviceRepo: deviceRepo,
+		OrderRepo:  orderRepo,
+	}
+}
+
+func (c *PowerCalculator) GetCurrentOrder() model.Order {
+	order := c.OrderRepo.GetCurrentOrder()
+	if order == nil {
+		return model.Order{}
+	}
+	return *order
 }
 
 func (c *PowerCalculator) CalculateTotalPower(order model.Order) (base int, calculated int) {
 	var total int
 	for _, id := range order.DeviceIDs {
-		if dev := c.Repo.GetByID(id); dev != nil {
+		if dev := c.DeviceRepo.GetByID(id); dev != nil {
 			total += dev.PowerWatt
 		}
 	}
@@ -27,7 +39,7 @@ func (c *PowerCalculator) CalculateTotalPower(order model.Order) (base int, calc
 func (c *PowerCalculator) GetDevicesInOrder(order model.Order) []model.Device {
 	var devices []model.Device
 	for _, id := range order.DeviceIDs {
-		if dev := c.Repo.GetByID(id); dev != nil {
+		if dev := c.DeviceRepo.GetByID(id); dev != nil {
 			devices = append(devices, *dev)
 		}
 	}
