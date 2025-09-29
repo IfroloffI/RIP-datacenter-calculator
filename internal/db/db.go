@@ -31,6 +31,32 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 		&model.OrderDevice{},
 	)
 
+	// Фикс фичи с FK:
+
+	db.Exec(`
+    ALTER TABLE orders 
+    ADD CONSTRAINT fk_orders_created_by 
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT;
+`)
+
+	db.Exec(`
+    ALTER TABLE orders 
+    ADD CONSTRAINT fk_orders_moderator 
+    FOREIGN KEY (moderator_id) REFERENCES users(id) ON DELETE SET NULL;
+`)
+
+	db.Exec(`
+    ALTER TABLE order_devices 
+    ADD CONSTRAINT fk_order_devices_order 
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE RESTRICT;
+`)
+
+	db.Exec(`
+    ALTER TABLE order_devices 
+    ADD CONSTRAINT fk_order_devices_device 
+    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE RESTRICT;
+`)
+
 	var userCount int64
 	db.Model(&model.User{}).Count(&userCount)
 	if userCount == 0 {

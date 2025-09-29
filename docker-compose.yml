@@ -1,7 +1,7 @@
 services:
   minio:
     image: quay.io/minio/minio:RELEASE.2022-10-15T19-57-03Z
-    container_name: minio
+    container_name: rip-minio
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -15,6 +15,7 @@ services:
     restart: unless-stopped
   postgres:
     image: postgres:latest
+    container_name: rip-postgres-18
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: secret
@@ -27,6 +28,7 @@ services:
 
   adminer:
     image: adminer:latest
+    container_name: rip-adminer
     ports:
       - "8081:8080"
     depends_on:
