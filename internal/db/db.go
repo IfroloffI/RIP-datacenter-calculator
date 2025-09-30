@@ -24,83 +24,62 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 		return nil, err
 	}
 
+	// Миграции
 	db.AutoMigrate(
 		&model.User{},
 		&model.Device{},
-		&model.Order{},
-		&model.OrderDevice{},
+		&model.Calculation{},
+		&model.CalculationDevice{},
 	)
 
-	// Фикс фичи с FK:
+	// Удаляем старые FK (если есть)
+	db.Exec("ALTER TABLE calculations DROP CONSTRAINT IF EXISTS fk_calculations_created_by;")
+	db.Exec("ALTER TABLE calculations DROP CONSTRAINT IF EXISTS fk_calculations_moderator;")
+	db.Exec("ALTER TABLE calculation_devices DROP CONSTRAINT IF EXISTS fk_calculation_devices_calculation;")
+	db.Exec("ALTER TABLE calculation_devices DROP CONSTRAINT IF EXISTS fk_calculation_devices_device;")
+
+	// Новые FK без каскадного удаления
+	db.Exec(`
+		ALTER TABLE calculations 
+		ADD CONSTRAINT fk_calculations_created_by 
+		FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT;
+	`)
 
 	db.Exec(`
-    ALTER TABLE orders 
-    ADD CONSTRAINT fk_orders_created_by 
-    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT;
-`)
+		ALTER TABLE calculations 
+		ADD CONSTRAINT fk_calculations_moderator 
+		FOREIGN KEY (moderator_id) REFERENCES users(id) ON DELETE SET NULL;
+	`)
 
 	db.Exec(`
-    ALTER TABLE orders 
-    ADD CONSTRAINT fk_orders_moderator 
-    FOREIGN KEY (moderator_id) REFERENCES users(id) ON DELETE SET NULL;
-`)
+		ALTER TABLE calculation_devices 
+		ADD CONSTRAINT fk_calculation_devices_calculation 
+		FOREIGN KEY (calculation_id) REFERENCES calculations(id) ON DELETE RESTRICT;
+	`)
 
 	db.Exec(`
-    ALTER TABLE order_devices 
-    ADD CONSTRAINT fk_order_devices_order 
-    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE RESTRICT;
-`)
+		ALTER TABLE calculation_devices 
+		ADD CONSTRAINT fk_calculation_devices_device 
+		FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE RESTRICT;
+	`)
 
-	db.Exec(`
-    ALTER TABLE order_devices 
-    ADD CONSTRAINT fk_order_devices_device 
-    FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE RESTRICT;
-`)
-
+	// Инициализация данных
 	var userCount int64
 	db.Model(&model.User{}).Count(&userCount)
 	if userCount == 0 {
-		db.Create(&model.User{
-			Username:    "user",
-			Password:    "user",
-			IsModerator: false,
-		})
-		db.Create(&model.User{
-			Username:    "admin",
-			Password:    "admin",
-			IsModerator: true,
-		})
+		db.Create(&model.User{Username: "user", Password: "user", IsModerator: false})
+		db.Create(&model.User{Username: "admin", Password: "admin", IsModerator: true})
 	}
 
 	var deviceCount int64
 	db.Model(&model.Device{}).Count(&deviceCount)
 	if deviceCount == 0 {
-		db.Create([]model.Device{
-			{
-				Name:        "Сервер Dell R760",
-				PowerWatt:   850,
-				Description: "Мощный сервер для критичных workloads. 2x Intel Xeon, до 3TB RAM.",
-				ImageURL:    "dell-r760.jpg",
-				Category:    "Сервер",
-				IsDeleted:   false,
-			},
-			{
-				Name:        "Коммутатор Dell N2024",
-				PowerWatt:   30,
-				Description: "Коммутатор уровня доступа, 24 порта 1G.",
-				ImageURL:    "dell-n2024.jpg",
-				Category:    "Коммутатор",
-				IsDeleted:   false,
-			},
-			{
-				Name:        "СХД Dell PowerVault ME5024",
-				PowerWatt:   1400,
-				Description: "Система хранения данных начального уровня, 24 дисковых слота.",
-				ImageURL:    "dell-me5024.jpg",
-				Category:    "СХД",
-				IsDeleted:   false,
-			},
-		})
+		devices := []model.Device{
+			{Name: "Сервер Dell R760", PowerWatt: 850, Description: "Мощный сервер...", ImageURL: "dell-r760.jpg", Category: "Сервер", IsDeleted: false},
+			{Name: "Коммутатор Dell N2024", PowerWatt: 30, Description: "Коммутатор...", ImageURL: "dell-n2024.jpg", Category: "Коммутатор", IsDeleted: false},
+			{Name: "СХД Dell PowerVault ME5024", PowerWatt: 1400, Description: "СХД...", ImageURL: "dell-me5024.jpg", Category: "СХД", IsDeleted: false},
+		}
+		db.Create(devices)
 	}
 
 	return db, nil

@@ -7,12 +7,18 @@
                 class="search-input">
             <button type="submit" class="search-button">Найти</button>
         </form>
-        <div class="header-controls-spaced">
-            <a href="/power-calc" class="current-calculation">
-                <img src="/static/basket.png" alt="Bucket" width="50" height="50">
-                <span class="calculation-count">{{ .TotalItems }}</span>
-            </a>
-        </div>
+
+        {{ if and .DraftCalculationID (gt .TotalItems 0) }}
+        <a href="/calculation/{{ .DraftCalculationID }}" class="current-calculation">
+            <img src="/static/basket.png" width="50" height="50">
+            <span class="calculation-count">{{ .TotalItems }}</span>
+        </a>
+        {{ else }}
+        <span class="current-calculation" style="opacity:0.5; cursor:not-allowed;">
+            <img src="/static/basket.png" width="50" height="50">
+            <span class="calculation-count">0</span>
+        </span>
+        {{ end }}
     </section>
 
     <section class="devices-grid">
@@ -28,7 +34,7 @@
             </div>
             <div class="device-actions">
                 <a href="/device/{{ .ID }}" class="details-button">Подробнее</a>
-                <form method="POST" action="/order/add-device" style="margin:0;">
+                <form method="POST" action="/calculation/add" style="margin:0;">
                     <input type="hidden" name="device_id" value="{{ .ID }}">
                     <button type="submit" class="add-button">В корзину</button>
                 </form>

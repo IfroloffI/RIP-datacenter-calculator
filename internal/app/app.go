@@ -7,11 +7,12 @@ import (
 	"datacenter-calc/internal/repo"
 	"datacenter-calc/internal/usecase"
 	"log"
-	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type App struct {
-	httpServer *http.Server
+	engine *gin.Engine
 }
 
 func New(cfg *config.Config) *App {
@@ -21,29 +22,24 @@ func New(cfg *config.Config) *App {
 	}
 
 	deviceRepo := &repo.DeviceRepository{DB: dbConn}
-	orderRepo := &repo.OrderRepository{DB: dbConn}
+	calcRepo := &repo.CalculationRepository{DB: dbConn}
 
-	calculator := usecase.NewPowerCalculator(deviceRepo, orderRepo)
+	calculator := usecase.NewPowerCalculator(deviceRepo, calcRepo)
 	handler := appHttp.NewHandler(calculator, cfg)
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", handler.Devices)
-	mux.HandleFunc("/device/", handler.DeviceDetail)
-	mux.HandleFunc("/power-calc", handler.PowerCalc)
-	mux.HandleFunc("/order/add-device", handler.AddDeviceToOrder)
-	mux.HandleFunc("/order/delete", handler.DeleteOrder)
-	mux.Handle("/static/", http.StripPrefix("/static/", handler.ServeStatic()))
+	r := gin.Default()
+	r.Static("/static", "./static")
 
-	server := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
-	}
+	r.GET("/", handler.Devices)
+	r.GET("/device/:id", handler.DeviceDetail)
+	r.GET("/calculation/:id", handler.CalculationDetail)
+	r.POST("/calculation/add", handler.AddToCalc)
+	r.POST("/calculation/:id/add-device", handler.AddDeviceToCalculation)
+	r.POST("/calculation/:id/delete", handler.DeleteCalculation)
 
-	return &App{
-		httpServer: server,
-	}
+	return &App{engine: r}
 }
 
 func (a *App) Run() error {
-	return a.httpServer.ListenAndServe()
+	return a.engine.Run(":8080")
 }

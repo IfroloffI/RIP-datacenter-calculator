@@ -70,10 +70,12 @@
         </div>
 
         <div class="calculation-actions">
-            <form method="POST" action="/order/delete">
+            {{ if eq .Calculation.Status "draft" }}
+            <form method="POST" action="/calculation/{{ .Calculation.ID }}/delete">
                 <button type="submit" class="details-button" style="background:#ff4d4d;color:white;">Удалить
-                    заявку</button>
+                    расчёт</button>
             </form>
+            {{ end }}
         </div>
     </section>
 </div>

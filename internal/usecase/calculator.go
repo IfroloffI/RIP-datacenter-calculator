@@ -6,14 +6,14 @@ import (
 )
 
 type PowerCalculator struct {
-	DeviceRepo *repo.DeviceRepository
-	OrderRepo  *repo.OrderRepository
+	DeviceRepo      *repo.DeviceRepository
+	CalculationRepo *repo.CalculationRepository
 }
 
-func NewPowerCalculator(deviceRepo *repo.DeviceRepository, orderRepo *repo.OrderRepository) *PowerCalculator {
+func NewPowerCalculator(deviceRepo *repo.DeviceRepository, calcRepo *repo.CalculationRepository) *PowerCalculator {
 	return &PowerCalculator{
-		DeviceRepo: deviceRepo,
-		OrderRepo:  orderRepo,
+		DeviceRepo:      deviceRepo,
+		CalculationRepo: calcRepo,
 	}
 }
 
@@ -27,18 +27,18 @@ func (c *PowerCalculator) CalculateTotalPower(devices []model.DeviceWithQuantity
 	return base, calculated
 }
 
-func (c *PowerCalculator) GetDevicesInOrder(order model.Order) []model.DeviceWithQuantityAndIPW {
+func (c *PowerCalculator) GetDevicesInCalculation(calc model.Calculation) []model.DeviceWithQuantityAndIPW {
 	var result []model.DeviceWithQuantityAndIPW
 
-	var orderDevices []model.OrderDevice
-	c.DeviceRepo.DB.Where("order_id = ?", order.ID).Find(&orderDevices)
+	var calcDevices []model.CalculationDevice
+	c.DeviceRepo.DB.Where("calculation_id = ?", calc.ID).Find(&calcDevices)
 
 	quantityMap := make(map[uint]int)
-	for _, od := range orderDevices {
-		quantityMap[od.DeviceID] = od.Quantity
+	for _, cd := range calcDevices {
+		quantityMap[cd.DeviceID] = cd.Quantity
 	}
 
-	for _, dev := range order.Devices {
+	for _, dev := range calc.Devices {
 		result = append(result, model.DeviceWithQuantityAndIPW{
 			Device:         dev,
 			Count:          quantityMap[dev.ID],
