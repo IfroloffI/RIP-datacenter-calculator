@@ -75,9 +75,9 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 	db.Model(&model.Device{}).Count(&deviceCount)
 	if deviceCount == 0 {
 		devices := []model.Device{
-			{Name: "Сервер Dell R760", PowerWatt: 850, Description: "Мощный сервер...", ImageURL: "dell-r760.jpg", Category: "Сервер", IsDeleted: false},
-			{Name: "Коммутатор Dell N2024", PowerWatt: 30, Description: "Коммутатор...", ImageURL: "dell-n2024.jpg", Category: "Коммутатор", IsDeleted: false},
-			{Name: "СХД Dell PowerVault ME5024", PowerWatt: 1400, Description: "СХД...", ImageURL: "dell-me5024.jpg", Category: "СХД", IsDeleted: false},
+			{Name: "Сервер Dell R760", PowerWatt: 850, Description: "Мощный сервер...", ImageURL: "dell-r760.png", Category: "Сервер", IsDeleted: false},
+			{Name: "Коммутатор Dell N2024", PowerWatt: 30, Description: "Коммутатор...", ImageURL: "dell-n2024.png", Category: "Коммутатор", IsDeleted: false},
+			{Name: "СХД Dell PowerVault ME5024", PowerWatt: 1400, Description: "СХД...", ImageURL: "dell-me5024.png", Category: "СХД", IsDeleted: false},
 		}
 		db.Create(devices)
 	}

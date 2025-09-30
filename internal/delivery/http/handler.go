@@ -3,6 +3,7 @@ package http
 import (
 	"html/template"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -126,12 +127,21 @@ func (h *Handler) AddToCalc(c *gin.Context) {
 		c.Redirect(http.StatusSeeOther, "/")
 		return
 	}
+
+	// Сохраняем параметр поиска
+	query := c.PostForm("search_query")
+
 	draft := h.Calculator.CalculationRepo.GetDraftByUser(h.CurrentUserID)
 	if draft == nil {
 		draft = h.Calculator.CalculationRepo.CreateDraft(h.CurrentUserID)
 	}
 	h.Calculator.CalculationRepo.AddDeviceToCalculation(draft.ID, uint(deviceID), 1)
-	c.Redirect(http.StatusSeeOther, "/calculation/"+strconv.FormatUint(uint64(draft.ID), 10))
+
+	redirectURL := "/"
+	if query != "" {
+		redirectURL = "/?q=" + url.QueryEscape(query)
+	}
+	c.Redirect(http.StatusSeeOther, redirectURL)
 }
 
 func (h *Handler) AddDeviceToCalculation(c *gin.Context) {
