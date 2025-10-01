@@ -36,6 +36,7 @@
                 <a href="/device/{{ .ID }}" class="details-button">Подробнее</a>
                 <form method="POST" action="/calculation/add" style="margin:0;">
                     <input type="hidden" name="device_id" value="{{ .ID }}">
+                    <input type="hidden" name="search_query" value="{{ $.SearchQuery }}">
                     <button type="submit" class="add-button">В расчёт</button>
                 </form>
             </div>

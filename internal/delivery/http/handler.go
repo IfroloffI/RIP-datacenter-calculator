@@ -129,7 +129,7 @@ func (h *Handler) AddToCalc(c *gin.Context) {
 	}
 
 	// Сохраняем параметр поиска
-	query := c.PostForm("search_query")
+	searchQuery := c.PostForm("search_query")
 
 	draft := h.Calculator.CalculationRepo.GetDraftByUser(h.CurrentUserID)
 	if draft == nil {
@@ -138,9 +138,10 @@ func (h *Handler) AddToCalc(c *gin.Context) {
 	h.Calculator.CalculationRepo.AddDeviceToCalculation(draft.ID, uint(deviceID), 1)
 
 	redirectURL := "/"
-	if query != "" {
-		redirectURL = "/?q=" + url.QueryEscape(query)
+	if searchQuery != "" {
+		redirectURL = "/?q=" + url.QueryEscape(searchQuery)
 	}
+
 	c.Redirect(http.StatusSeeOther, redirectURL)
 }
 
