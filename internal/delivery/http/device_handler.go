@@ -1,4 +1,3 @@
-// internal/delivery/http/device_handler.go
 package http
 
 import (

@@ -41,6 +41,7 @@ func New(cfg *config.Config) *App {
 	handler := http.NewHandler(calculator, cfg)
 
 	r := gin.Default()
+	// r.Static("/static", "./static")
 
 	api := r.Group("/api")
 	{

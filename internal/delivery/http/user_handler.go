@@ -1,4 +1,3 @@
-// internal/delivery/http/user_handler.go
 package http
 
 import (
