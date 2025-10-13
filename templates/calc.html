@@ -71,7 +71,7 @@
 
         <div class="calculation-actions">
             {{ if eq .Calculation.Status "draft" }}
-            <form method="POST" action="/calculation/{{ .Calculation.ID }}/delete">
+            <form method="POST" action="/powercalculation/{{ .Calculation.ID }}/delete">
                 <button type="submit" class="details-button" style="background:#ff4d4d;color:white;">Удалить
                     расчёт</button>
             </form>

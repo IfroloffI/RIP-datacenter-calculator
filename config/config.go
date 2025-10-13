@@ -15,8 +15,12 @@ type Config struct {
 	} `mapstructure:"db"`
 
 	MinIO struct {
-		URL    string `mapstructure:"url"`
-		Bucket string `mapstructure:"bucket"`
+		Endpoint  string `mapstructure:"endpoint"`
+		AccessKey string `mapstructure:"access_key"`
+		SecretKey string `mapstructure:"secret_key"`
+		Bucket    string `mapstructure:"bucket"`
+		UseSSL    bool   `mapstructure:"use_ssl"`
+		URL       string `mapstructure:"url"`
 	} `mapstructure:"minio"`
 }
 

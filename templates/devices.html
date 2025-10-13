@@ -9,7 +9,7 @@
         </form>
 
         {{ if and .DraftCalculationID (gt .TotalItems 0) }}
-        <a href="/calculation/{{ .DraftCalculationID }}" class="current-calculation">
+        <a href="/powercalculation/{{ .DraftCalculationID }}" class="current-calculation">
             <img src="/static/basket.png" width="50" height="50">
             <span class="calculation-count">{{ .TotalItems }}</span>
         </a>
@@ -34,7 +34,7 @@
             </div>
             <div class="device-actions">
                 <a href="/device/{{ .ID }}" class="details-button">Подробнее</a>
-                <form method="POST" action="/calculation/add" style="margin:0;">
+                <form method="POST" action="/powercalculation/add" style="margin:0;">
                     <input type="hidden" name="device_id" value="{{ .ID }}">
                     <input type="hidden" name="search_query" value="{{ $.SearchQuery }}">
                     <button type="submit" class="add-button">В расчёт</button>

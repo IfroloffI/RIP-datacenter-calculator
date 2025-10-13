@@ -28,38 +28,38 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 	db.AutoMigrate(
 		&model.User{},
 		&model.Device{},
-		&model.Calculation{},
-		&model.CalculationDevice{},
+		&model.PowerCalculation{},
+		&model.PowerCalculationDevice{},
 	)
 
 	// Удаляем старые FK (если есть)
-	db.Exec("ALTER TABLE calculations DROP CONSTRAINT IF EXISTS fk_calculations_created_by;")
-	db.Exec("ALTER TABLE calculations DROP CONSTRAINT IF EXISTS fk_calculations_moderator;")
-	db.Exec("ALTER TABLE calculation_devices DROP CONSTRAINT IF EXISTS fk_calculation_devices_calculation;")
-	db.Exec("ALTER TABLE calculation_devices DROP CONSTRAINT IF EXISTS fk_calculation_devices_device;")
+	db.Exec("ALTER TABLE power_calculations DROP CONSTRAINT IF EXISTS fk_power_calculations_created_by;")
+	db.Exec("ALTER TABLE power_calculations DROP CONSTRAINT IF EXISTS fk_power_calculations_moderator;")
+	db.Exec("ALTER TABLE power_calculation_devices DROP CONSTRAINT IF EXISTS fk_power_calculation_devices_power_calculation;")
+	db.Exec("ALTER TABLE power_calculation_devices DROP CONSTRAINT IF EXISTS fk_power_calculation_devices_device;")
 
 	// Новые FK без каскадного удаления
 	db.Exec(`
-		ALTER TABLE calculations 
-		ADD CONSTRAINT fk_calculations_created_by 
+		ALTER TABLE power_calculations 
+		ADD CONSTRAINT fk_power_calculations_created_by 
 		FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT;
 	`)
 
 	db.Exec(`
-		ALTER TABLE calculations 
-		ADD CONSTRAINT fk_calculations_moderator 
+		ALTER TABLE power_calculations 
+		ADD CONSTRAINT fk_power_calculations_moderator 
 		FOREIGN KEY (moderator_id) REFERENCES users(id) ON DELETE SET NULL;
 	`)
 
 	db.Exec(`
-		ALTER TABLE calculation_devices 
-		ADD CONSTRAINT fk_calculation_devices_calculation 
-		FOREIGN KEY (calculation_id) REFERENCES calculations(id) ON DELETE RESTRICT;
+		ALTER TABLE power_calculation_devices 
+		ADD CONSTRAINT fk_power_calculation_devices_power_calculation
+		FOREIGN KEY (calculation_id) REFERENCES power_calculations(id) ON DELETE RESTRICT;
 	`)
 
 	db.Exec(`
-		ALTER TABLE calculation_devices 
-		ADD CONSTRAINT fk_calculation_devices_device 
+		ALTER TABLE power_calculation_devices 
+		ADD CONSTRAINT fk_power_calculation_devices_device 
 		FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE RESTRICT;
 	`)
 

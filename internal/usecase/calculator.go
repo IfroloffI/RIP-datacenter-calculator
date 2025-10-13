@@ -1,50 +1,93 @@
 package usecase
 
 import (
+	"datacenter-calc/internal/minio"
 	"datacenter-calc/internal/model"
 	"datacenter-calc/internal/repo"
+	"errors"
+	"time"
 )
 
 type PowerCalculator struct {
 	DeviceRepo      *repo.DeviceRepository
 	CalculationRepo *repo.CalculationRepository
+	MinIOClient     *minio.MinIOClient
 }
 
-func NewPowerCalculator(deviceRepo *repo.DeviceRepository, calcRepo *repo.CalculationRepository) *PowerCalculator {
+func NewPowerCalculator(deviceRepo *repo.DeviceRepository, calcRepo *repo.CalculationRepository, minioClient *minio.MinIOClient) *PowerCalculator {
 	return &PowerCalculator{
 		DeviceRepo:      deviceRepo,
 		CalculationRepo: calcRepo,
+		MinIOClient:     minioClient,
 	}
 }
 
-func (c *PowerCalculator) CalculateTotalPower(devices []model.DeviceWithQuantityAndIPW, pue float64) (base int, calculated int) {
-	var total int
+func (c *PowerCalculator) CalculateTotalPower(devices []model.Device, quantities map[uint]int) int {
+	total := 0
 	for _, d := range devices {
-		total += d.PowerWatt * d.Count
+		q := quantities[d.ID]
+		total += d.PowerWatt * q
 	}
-	base = total
-	calculated = int(float64(total) * pue)
-	return base, calculated
+	return total
 }
 
-func (c *PowerCalculator) GetDevicesInCalculation(calc model.Calculation) []model.DeviceWithQuantityAndIPW {
-	var result []model.DeviceWithQuantityAndIPW
-
-	var calcDevices []model.CalculationDevice
-	c.DeviceRepo.DB.Where("calculation_id = ?", calc.ID).Find(&calcDevices)
-
-	quantityMap := make(map[uint]int)
-	for _, cd := range calcDevices {
-		quantityMap[cd.DeviceID] = cd.Quantity
+func (c *PowerCalculator) CompleteCalculation(calcID, moderatorID uint) error {
+	calc, err := c.CalculationRepo.GetCalculationWithDevices(calcID)
+	if err != nil {
+		return err
+	}
+	if calc.Status != model.StatusFormed {
+		return errors.New("можно завершать только сформированные заявки")
 	}
 
-	for _, dev := range calc.Devices {
-		result = append(result, model.DeviceWithQuantityAndIPW{
-			Device:         dev,
-			Count:          quantityMap[dev.ID],
-			InterPowerWatt: quantityMap[dev.ID] * dev.PowerWatt,
-		})
+	var calcDevices []model.PowerCalculationDevice
+	err = c.DeviceRepo.DB.Where("calculation_id = ?", calcID).Find(&calcDevices).Error
+	if err != nil {
+		return err
 	}
 
-	return result
+	quantities := calc.DeviceQuantities
+	total := c.CalculateTotalPower(calc.Devices, quantities)
+
+	now := time.Now()
+	calc.ModeratorID = &moderatorID
+	calc.CompletedAt = &now
+	calc.TotalPower = &total
+	calc.Status = model.StatusCompleted
+
+	return c.CalculationRepo.UpdateCalculation(calc)
+}
+
+func (c *PowerCalculator) RejectCalculation(calcID, moderatorID uint) error {
+	calc, err := c.CalculationRepo.GetCalculationWithDevices(calcID)
+	if err != nil {
+		return err
+	}
+	if calc.Status != model.StatusFormed {
+		return errors.New("можно отклонять только сформированные заявки")
+	}
+
+	now := time.Now()
+	calc.ModeratorID = &moderatorID
+	calc.CompletedAt = &now
+	calc.Status = model.StatusRejected
+
+	return c.CalculationRepo.UpdateCalculation(calc)
+}
+
+func (c *PowerCalculator) FormCalculation(calcID uint, requiredFieldsValid bool) error {
+	if !requiredFieldsValid {
+		return errors.New("обязательные поля не заполнены")
+	}
+	calc, err := c.CalculationRepo.GetCalculationWithDevices(calcID)
+	if err != nil {
+		return err
+	}
+	if calc.Status != model.StatusDraft {
+		return errors.New("можно формировать только черновики")
+	}
+	now := time.Now()
+	calc.FormedAt = &now
+	calc.Status = model.StatusFormed
+	return c.CalculationRepo.UpdateCalculation(calc)
 }
