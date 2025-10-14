@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"datacenter-calc/internal/auth"
 	"datacenter-calc/internal/model"
 	"datacenter-calc/internal/usecase"
 
@@ -22,6 +23,9 @@ func NewCalculationHandler(calc *usecase.PowerCalculator, minioURL string) *Calc
 }
 
 func (h *CalculationHandler) GetCalculations(c *gin.Context) {
+	userID := auth.UserIDFromContext(c)
+	role := auth.UserRoleFromContext(c)
+
 	var statuses []model.CalculationStatus
 	if s := c.Query("status"); s != "" {
 		for _, st := range strings.Split(s, ",") {
@@ -41,7 +45,17 @@ func (h *CalculationHandler) GetCalculations(c *gin.Context) {
 		}
 	}
 
-	calcs, err := h.Calculator.CalculationRepo.GetCalculationsFiltered(statuses, fromDate, toDate)
+	var calcs []model.PowerCalculation
+	var err error
+
+	if role == model.RoleModerator {
+		calcs, err = h.Calculator.CalculationRepo.GetCalculationsFiltered(statuses, fromDate, toDate)
+	} else if userID != 0 {
+		calcs, err = h.Calculator.CalculationRepo.GetCalculationsByUser(userID, statuses, fromDate, toDate)
+	} else {
+		calcs, err = h.Calculator.CalculationRepo.GetPublicCalculations(statuses, fromDate, toDate)
+	}
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "DB error"})
 		return
@@ -54,20 +68,22 @@ func (h *CalculationHandler) GetCalculations(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (h *CalculationHandler) CreateCalculation(c *gin.Context) {
-	calc := h.Calculator.CalculationRepo.CreateDraft(CurrentUserID)
-	c.JSON(http.StatusCreated, calc.ToResponse(h.MinIOURL))
-}
-
 func (h *CalculationHandler) GetCalculation(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
+	userID := auth.UserIDFromContext(c)
+	role := auth.UserRoleFromContext(c)
+
 	calc, err := h.Calculator.CalculationRepo.GetCalculationWithDevices(uint(id))
 	if err != nil || calc.Status == model.StatusDeleted {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
 
-	// Формируем устройства с количеством
+	if role != model.RoleModerator && (userID == 0 || calc.CreatedBy != userID) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+		return
+	}
+
 	devicesResp := make([]model.DeviceWithQuantity, len(calc.Devices))
 	for i, d := range calc.Devices {
 		img := ""
@@ -81,7 +97,7 @@ func (h *CalculationHandler) GetCalculation(c *gin.Context) {
 			Description: d.Description,
 			ImageURL:    img,
 			Category:    d.Category,
-			Quantity:    calc.DeviceQuantities[d.ID], // ← вот оно!
+			Quantity:    calc.DeviceQuantities[d.ID],
 		}
 	}
 
@@ -107,7 +123,15 @@ func (h *CalculationHandler) GetCalculation(c *gin.Context) {
 
 func (h *CalculationHandler) FormCalculation(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	err := h.Calculator.FormCalculation(uint(id), true) // true = поля заполнены
+	userID := auth.UserIDFromContext(c)
+
+	calc, err := h.Calculator.CalculationRepo.GetCalculationWithDevices(uint(id))
+	if err != nil || calc.CreatedBy != userID || calc.Status != model.StatusDraft {
+		c.JSON(http.StatusForbidden, gin.H{"error": "only creator can form draft"})
+		return
+	}
+
+	err = h.Calculator.FormCalculation(uint(id), true)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -117,7 +141,8 @@ func (h *CalculationHandler) FormCalculation(c *gin.Context) {
 
 func (h *CalculationHandler) CompleteCalculation(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	err := h.Calculator.CompleteCalculation(uint(id), 2) // модератор
+
+	err := h.Calculator.CompleteCalculation(uint(id), auth.UserIDFromContext(c))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -127,7 +152,8 @@ func (h *CalculationHandler) CompleteCalculation(c *gin.Context) {
 
 func (h *CalculationHandler) RejectCalculation(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
-	err := h.Calculator.RejectCalculation(uint(id), 2)
+
+	err := h.Calculator.RejectCalculation(uint(id), auth.UserIDFromContext(c))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -137,11 +163,18 @@ func (h *CalculationHandler) RejectCalculation(c *gin.Context) {
 
 func (h *CalculationHandler) DeleteCalculation(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
+	userID := auth.UserIDFromContext(c)
+
+	calc, err := h.Calculator.CalculationRepo.GetCalculationWithDevices(uint(id))
+	if err != nil || calc.CreatedBy != userID || calc.Status != model.StatusDraft {
+		c.JSON(http.StatusForbidden, gin.H{"error": "only creator can delete draft"})
+		return
+	}
+
 	h.Calculator.CalculationRepo.SoftDeleteCalculationSQL(uint(id))
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }
 
-// PUT /api/power-calculations/:id
 func (h *CalculationHandler) UpdateCalculationFields(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
@@ -149,13 +182,14 @@ func (h *CalculationHandler) UpdateCalculationFields(c *gin.Context) {
 		return
 	}
 
+	userID := auth.UserIDFromContext(c)
 	calc, err := h.Calculator.CalculationRepo.GetCalculationWithDevices(uint(id))
 	if err != nil || calc.Status == model.StatusDeleted {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
 		return
 	}
 
-	if calc.CreatedBy != CurrentUserID {
+	if calc.CreatedBy != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "only creator can edit"})
 		return
 	}

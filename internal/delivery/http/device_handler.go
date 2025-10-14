@@ -159,8 +159,7 @@ func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 
 	if device.ImageURL != "" {
 		if err := h.MinIO.DeleteFile(context.Background(), device.ImageURL); err != nil {
-			// Логируем, но не прерываем удаление записи
-			// В продакшене — лучше логгер
+			// TODO: логи
 		}
 	}
 

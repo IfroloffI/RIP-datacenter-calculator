@@ -7,14 +7,14 @@ services:
       - "8051:9001"
     environment:
       MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin # Дефолты
+      MINIO_ROOT_PASSWORD: minioadmin
     volumes:
-      - minio-data:/data
+      - minio_data:/data
       - ./config:/root/.minio
     command: server /data --console-address ":9001"
     restart: unless-stopped
   postgres:
-    image: postgres:latest
+    image: postgres:18
     container_name: rip-postgres-18
     environment:
       POSTGRES_USER: postgres
@@ -34,8 +34,22 @@ services:
     depends_on:
       - postgres
 
+  redis:
+    image: redis:alpine
+    container_name: rip-redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_DATABASE=0
+      - REDIS_PASSWORD=secret
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
 volumes:
-  minio-data:
-    name: minio_data_volume
+  minio_data:
+    name: rip-minio-volume
   postgres_data:
-    name: rip-psgre-volume
+    name: rip-postgre-volume
+  redis_data:
+    name: rip-redis-volume

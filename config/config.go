@@ -22,6 +22,17 @@ type Config struct {
 		UseSSL    bool   `mapstructure:"use_ssl"`
 		URL       string `mapstructure:"url"`
 	} `mapstructure:"minio"`
+
+	JWT struct {
+		Secret string `mapstructure:"secret"`
+		Exp    int    `mapstructure:"exp"` // в минутах
+	} `mapstructure:"jwt"`
+
+	Redis struct {
+		Host     string `mapstructure:"host"`
+		Port     int    `mapstructure:"port"`
+		Password string `mapstructure:"password"`
+	} `mapstructure:"redis"`
 }
 
 func LoadConfig(path string) (*Config, error) {

@@ -129,3 +129,51 @@ func (r *CalculationRepository) RemoveDeviceFromCalculation(calcID, deviceID uin
 	return r.DB.Where("calculation_id = ? AND device_id = ?", calcID, deviceID).
 		Delete(&model.PowerCalculationDevice{}).Error
 }
+
+func (r *CalculationRepository) GetCalculationsByUser(userID uint, statuses []model.CalculationStatus, fromDate, toDate *time.Time) ([]model.PowerCalculation, error) {
+	query := r.DB.Where("created_by = ? AND status != ? AND status != ?", userID, model.StatusDeleted, model.StatusDraft)
+
+	if len(statuses) > 0 {
+		query = query.Where("status IN ?", statuses)
+	}
+	if fromDate != nil {
+		query = query.Where("formed_at >= ?", fromDate)
+	}
+	if toDate != nil {
+		query = query.Where("formed_at <= ?", toDate)
+	}
+
+	var calcs []model.PowerCalculation
+	err := query.Preload("User").Preload("Moderator").Find(&calcs).Error
+	return calcs, err
+}
+
+func (r *CalculationRepository) GetPublicCalculations(statuses []model.CalculationStatus, fromDate, toDate *time.Time) ([]model.PowerCalculation, error) {
+	allowed := []model.CalculationStatus{model.StatusCompleted, model.StatusRejected}
+	query := r.DB.Where("status IN ?", allowed)
+
+	if len(statuses) > 0 {
+		filtered := []model.CalculationStatus{}
+		for _, s := range statuses {
+			for _, a := range allowed {
+				if s == a {
+					filtered = append(filtered, s)
+					break
+				}
+			}
+		}
+		if len(filtered) > 0 {
+			query = query.Where("status IN ?", filtered)
+		}
+	}
+	if fromDate != nil {
+		query = query.Where("formed_at >= ?", fromDate)
+	}
+	if toDate != nil {
+		query = query.Where("formed_at <= ?", toDate)
+	}
+
+	var calcs []model.PowerCalculation
+	err := query.Preload("User").Preload("Moderator").Find(&calcs).Error
+	return calcs, err
+}

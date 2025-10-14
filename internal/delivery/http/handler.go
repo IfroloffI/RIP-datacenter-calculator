@@ -5,8 +5,6 @@ import (
 	"datacenter-calc/internal/usecase"
 )
 
-const CurrentUserID = 1 // hardcode user
-
 type Handler struct {
 	DeviceHandler      *DeviceHandler
 	CalculationHandler *CalculationHandler
@@ -15,7 +13,7 @@ type Handler struct {
 	UserHandler        *UserHandler
 }
 
-func NewHandler(calculator *usecase.PowerCalculator, cfg *config.Config) *Handler {
+func NewHandler(calculator *usecase.PowerCalculator, userUsecase *usecase.UserUsecase, cfg *config.Config) *Handler {
 	minioURL := cfg.MinIO.URL + "/" + cfg.MinIO.Bucket
 
 	return &Handler{
@@ -23,6 +21,6 @@ func NewHandler(calculator *usecase.PowerCalculator, cfg *config.Config) *Handle
 		CalculationHandler: NewCalculationHandler(calculator, minioURL),
 		CartHandler:        NewCartHandler(calculator.CalculationRepo),
 		MMHandler:          NewMMHandler(calculator.CalculationRepo),
-		UserHandler:        NewUserHandler(), // или отдельный UserRepo
+		UserHandler:        NewUserHandler(userUsecase),
 	}
 }

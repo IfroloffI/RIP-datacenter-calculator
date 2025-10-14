@@ -9,6 +9,11 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	UserPasswordHash  = "$2a$10$LWfd5kQB0kPz06yD7zXWfeb4guW5HpJtijnTpC3lcGVXDA4jtr2d6"
+	AdminPasswordHash = "$2a$10$nolnTrfJhBKOYXIsAlVRkujfCoO0A0qyM0uGTEV1ME4nl64N6cXbW"
+)
+
 func Connect(cfg *config.Config) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s",
@@ -67,8 +72,8 @@ func Connect(cfg *config.Config) (*gorm.DB, error) {
 	var userCount int64
 	db.Model(&model.User{}).Count(&userCount)
 	if userCount == 0 {
-		db.Create(&model.User{Username: "user", Password: "user", IsModerator: false})
-		db.Create(&model.User{Username: "admin", Password: "admin", IsModerator: true})
+		db.Create(&model.User{Username: "user", Password: UserPasswordHash})
+		db.Create(&model.User{Username: "admin", Password: AdminPasswordHash, Role: model.RoleModerator})
 	}
 
 	var deviceCount int64

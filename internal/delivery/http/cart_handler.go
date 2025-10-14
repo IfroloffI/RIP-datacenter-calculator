@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 
+	"datacenter-calc/internal/auth"
 	"datacenter-calc/internal/repo"
 
 	"github.com/gin-gonic/gin"
@@ -17,12 +18,14 @@ func NewCartHandler(calcRepo *repo.CalculationRepository) *CartHandler {
 }
 
 func (h *CartHandler) GetCartInfo(c *gin.Context) {
-	draft := h.CalcRepo.GetDraftByUser(CurrentUserID)
+	userID := auth.UserIDFromContext(c)
+
+	draft := h.CalcRepo.GetDraftByUser(userID)
 	if draft == nil {
-		draft = h.CalcRepo.CreateDraft(CurrentUserID)
+		draft = h.CalcRepo.CreateDraft(userID)
 	}
 
-	count := h.CalcRepo.GetTotalItemsInDraft(CurrentUserID)
+	count := h.CalcRepo.GetTotalItemsInDraft(userID)
 
 	c.JSON(http.StatusOK, gin.H{
 		"calculation_id": draft.ID,
