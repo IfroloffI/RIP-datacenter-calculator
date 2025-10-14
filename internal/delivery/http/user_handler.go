@@ -17,6 +17,16 @@ func NewUserHandler(usecase *usecase.UserUsecase) *UserHandler {
 	return &UserHandler{Usecase: usecase}
 }
 
+// RegisterUser godoc
+// @Summary Регистрация нового пользователя
+// @Description Создаёт нового пользователя с ролью "user"
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param request body RegisterRequest true "Данные регистрации"
+// @Success 201 {object} SuccessMessage
+// @Failure 400 {object} ErrorResponse
+// @Router /users/register [post]
 func (h *UserHandler) RegisterUser(c *gin.Context) {
 	var req struct {
 		Username string `json:"username" binding:"required"`
@@ -33,6 +43,17 @@ func (h *UserHandler) RegisterUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "user registered"})
 }
 
+// LoginUser godoc
+// @Summary Аутентификация
+// @Description Возвращает JWT-токен для авторизации
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "Данные для входа"
+// @Success 200 {object} LoginResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Router /users/login [post]
 func (h *UserHandler) LoginUser(c *gin.Context) {
 	var req struct {
 		Username string `json:"username" binding:"required"`
@@ -54,6 +75,15 @@ func (h *UserHandler) LoginUser(c *gin.Context) {
 	})
 }
 
+// LogoutUser godoc
+// @Summary Выход из системы
+// @Description Добавляет токен в blacklist (Redis)
+// @Tags auth
+// @Security Bearer
+// @Produce json
+// @Success 200 {object} SuccessMessage
+// @Failure 400 {object} ErrorResponse
+// @Router /users/logout [post]
 func (h *UserHandler) LogoutUser(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
@@ -68,6 +98,16 @@ func (h *UserHandler) LogoutUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "logged out"})
 }
 
+// GetMe godoc
+// @Summary Получить профиль текущего пользователя
+// @Description Возвращает данные авторизованного пользователя
+// @Tags users
+// @Security Bearer
+// @Produce json
+// @Success 200 {object} UserResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /users/me [get]
 func (h *UserHandler) GetMe(c *gin.Context) {
 	userID := auth.UserIDFromContext(c)
 	user, err := h.Usecase.GetMe(userID)
@@ -82,6 +122,19 @@ func (h *UserHandler) GetMe(c *gin.Context) {
 	})
 }
 
+// UpdateMe godoc
+// @Summary Обновить профиль
+// @Description Обновляет поля профиля (например, username)
+// @Tags users
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param request body UpdateUserRequest false "Поля для обновления"
+// @Success 200 {object} SuccessMessage
+// @Failure 400 {object} ErrorResponse
+// @Failure 401 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /users/me [put]
 func (h *UserHandler) UpdateMe(c *gin.Context) {
 	userID := auth.UserIDFromContext(c)
 	var req struct {

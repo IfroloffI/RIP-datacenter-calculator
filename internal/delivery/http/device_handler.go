@@ -26,7 +26,14 @@ func NewDeviceHandler(repo *repo.DeviceRepository, minioClient *minio.MinIOClien
 	return &DeviceHandler{Repo: repo, MinIO: minioClient, MinIOURL: minioURL}
 }
 
-// GET /api/devices
+// GetDevices godoc
+// @Summary Получить список услуг
+// @Description Получение списка оборудования с фильтрацией по названию или категории
+// @Tags devices
+// @Produce json
+// @Param q query string false "Поисковый запрос"
+// @Success 200 {array} DeviceResponse
+// @Router /devices [get]
 func (h *DeviceHandler) GetDevices(c *gin.Context) {
 	q := c.Query("q")
 	devices := h.Repo.GetAllActive()
@@ -47,7 +54,19 @@ func (h *DeviceHandler) GetDevices(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-// POST /api/devices
+// CreateDevice godoc
+// @Summary Создать новую услугу
+// @Description Добавление нового оборудования в каталог (только модератор)
+// @Tags devices
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param request body CreateDeviceRequest true "Данные услуги"
+// @Success 201 {object} DeviceResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /devices [post]
 func (h *DeviceHandler) CreateDevice(c *gin.Context) {
 	var req struct {
 		Name        string `json:"name" binding:"required"`
@@ -74,7 +93,17 @@ func (h *DeviceHandler) CreateDevice(c *gin.Context) {
 	c.JSON(http.StatusCreated, device.ToResponse(h.MinIOURL))
 }
 
-// GET /api/devices/:id
+// GetDevice godoc
+// @Summary Получить услугу по ID
+// @Description Получение детальной информации об оборудовании
+// @Tags devices
+// @Security Bearer
+// @Produce json
+// @Param id path int true "ID услуги"
+// @Success 200 {object} DeviceResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /devices/{id} [get]
 func (h *DeviceHandler) GetDevice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -90,7 +119,21 @@ func (h *DeviceHandler) GetDevice(c *gin.Context) {
 	c.JSON(http.StatusOK, device.ToResponse(h.MinIOURL))
 }
 
-// PUT /api/devices/:id
+// UpdateDevice godoc
+// @Summary Обновить услугу
+// @Description Изменение данных оборудования (только модератор)
+// @Tags devices
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param id path int true "ID услуги"
+// @Param request body UpdateDeviceRequest false "Поля для обновления"
+// @Success 200 {object} DeviceResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /devices/{id} [put]
 func (h *DeviceHandler) UpdateDevice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -142,7 +185,19 @@ func (h *DeviceHandler) UpdateDevice(c *gin.Context) {
 	c.JSON(http.StatusOK, updated.ToResponse(h.MinIOURL))
 }
 
-// DELETE /api/devices/:id
+// DeleteDevice godoc
+// @Summary Удалить услугу
+// @Description Помечает оборудование как удалённое (soft delete, только модератор)
+// @Tags devices
+// @Security Bearer
+// @Produce json
+// @Param id path int true "ID услуги"
+// @Success 200 {object} SuccessMessage
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /devices/{id} [delete]
 func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -171,7 +226,21 @@ func (h *DeviceHandler) DeleteDevice(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }
 
-// POST /api/devices/:id/image
+// UploadDeviceImage godoc
+// @Summary Загрузить изображение для услуги
+// @Description Заменяет текущее изображение оборудования (только модератор)
+// @Tags devices
+// @Security Bearer
+// @Accept multipart/form-data
+// @Produce json
+// @Param id path int true "ID услуги"
+// @Param image formData file true "Изображение"
+// @Success 200 {object} ImageUploadResponse
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /devices/{id}/image [post]
 func (h *DeviceHandler) UploadDeviceImage(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)

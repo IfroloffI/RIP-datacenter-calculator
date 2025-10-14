@@ -1,0 +1,904 @@
+basePath: /api
+definitions:
+  http.AddDeviceRequest:
+    properties:
+      device_id:
+        example: 1
+        type: integer
+      quantity:
+        example: 2
+        type: integer
+    type: object
+  http.CartResponse:
+    properties:
+      calculation_id:
+        example: 5
+        type: integer
+      total_items:
+        example: 3
+        type: integer
+    type: object
+  http.CreateDeviceRequest:
+    properties:
+      category:
+        example: Сервер
+        type: string
+      description:
+        example: Описание
+        type: string
+      name:
+        example: Новый сервер
+        type: string
+      power_watt:
+        example: 1000
+        type: integer
+    type: object
+  http.DeviceResponse:
+    properties:
+      category:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      image_url:
+        type: string
+      name:
+        type: string
+      power_watt:
+        type: integer
+    type: object
+  http.ErrorResponse:
+    properties:
+      error:
+        example: invalid credentials
+        type: string
+    type: object
+  http.ImageUploadResponse:
+    properties:
+      image_url:
+        example: http://localhost:8050/devices/...
+        type: string
+    type: object
+  http.LoginRequest:
+    properties:
+      password:
+        example: user
+        type: string
+      username:
+        example: user
+        type: string
+    type: object
+  http.LoginResponse:
+    properties:
+      access_token:
+        example: eyJ...
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+    type: object
+  http.PowerCalculationResponse:
+    properties:
+      completed_at:
+        type: string
+      created_at:
+        type: string
+      creator:
+        type: string
+      devices:
+        items:
+          $ref: '#/definitions/model.DeviceWithQuantity'
+        type: array
+      formed_at:
+        type: string
+      id:
+        type: integer
+      moderator:
+        type: string
+      status:
+        $ref: '#/definitions/model.CalculationStatus'
+      total_power:
+        type: integer
+    type: object
+  http.RegisterRequest:
+    properties:
+      password:
+        example: secure123
+        type: string
+      username:
+        example: newuser
+        type: string
+    type: object
+  http.SuccessMessage:
+    properties:
+      message:
+        example: updated
+        type: string
+    type: object
+  http.UpdateCalculationRequest:
+    properties:
+      dc_description:
+        example: Описание ЦОД
+        type: string
+      dc_name:
+        example: Мой ЦОД
+        type: string
+      pue:
+        example: 1.55
+        type: number
+    type: object
+  http.UpdateDeviceQuantityRequest:
+    properties:
+      quantity:
+        example: 3
+        type: integer
+    type: object
+  http.UpdateDeviceRequest:
+    properties:
+      category:
+        example: СХД
+        type: string
+      description:
+        example: Новое описание
+        type: string
+      name:
+        example: Обновлённый сервер
+        type: string
+      power_watt:
+        example: 1100
+        type: integer
+    type: object
+  http.UpdateUserRequest:
+    properties:
+      username:
+        example: newUserName
+        type: string
+    type: object
+  http.UserResponse:
+    properties:
+      role:
+        example: user
+        type: string
+      user_id:
+        example: 1
+        type: integer
+      username:
+        example: user
+        type: string
+    type: object
+  model.CalculationStatus:
+    enum:
+    - draft
+    - deleted
+    - formed
+    - completed
+    - rejected
+    type: string
+    x-enum-varnames:
+    - StatusDraft
+    - StatusDeleted
+    - StatusFormed
+    - StatusCompleted
+    - StatusRejected
+  model.DeviceWithQuantity:
+    properties:
+      category:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      image_url:
+        type: string
+      name:
+        type: string
+      power_watt:
+        type: integer
+      quantity:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для расчёта мощности ЦОД (лабораторная №4)
+  title: Datacenter Calculator API
+  version: "1.0"
+paths:
+  /cart:
+    get:
+      description: Возвращает ID черновика и количество услуг в нём
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.CartResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Получить информацию о корзине
+      tags:
+      - cart
+  /devices:
+    get:
+      description: Получение списка оборудования с фильтрацией по названию или категории
+      parameters:
+      - description: Поисковый запрос
+        in: query
+        name: q
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/http.DeviceResponse'
+            type: array
+      summary: Получить список услуг
+      tags:
+      - devices
+    post:
+      consumes:
+      - application/json
+      description: Добавление нового оборудования в каталог (только модератор)
+      parameters:
+      - description: Данные услуги
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.CreateDeviceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/http.DeviceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Создать новую услугу
+      tags:
+      - devices
+  /devices/{id}:
+    delete:
+      description: Помечает оборудование как удалённое (soft delete, только модератор)
+      parameters:
+      - description: ID услуги
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Удалить услугу
+      tags:
+      - devices
+    get:
+      description: Получение детальной информации об оборудовании
+      parameters:
+      - description: ID услуги
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.DeviceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Получить услугу по ID
+      tags:
+      - devices
+    put:
+      consumes:
+      - application/json
+      description: Изменение данных оборудования (только модератор)
+      parameters:
+      - description: ID услуги
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Поля для обновления
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/http.UpdateDeviceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.DeviceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Обновить услугу
+      tags:
+      - devices
+  /devices/{id}/image:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Заменяет текущее изображение оборудования (только модератор)
+      parameters:
+      - description: ID услуги
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Изображение
+        in: formData
+        name: image
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.ImageUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Загрузить изображение для услуги
+      tags:
+      - devices
+  /power-calculations:
+    get:
+      description: Для гостей — только completed/rejected. Для пользователей — только
+        свои. Для модераторов — все.
+      parameters:
+      - description: Фильтр по статусу (через запятую)
+        in: query
+        name: status
+        type: string
+      - description: 'Дата формирования от (формат: 2025-01-01)'
+        in: query
+        name: from_date
+        type: string
+      - description: 'Дата формирования до (формат: 2025-12-31)'
+        in: query
+        name: to_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/http.PowerCalculationResponse'
+            type: array
+      summary: Получить список заявок
+      tags:
+      - power-calculations
+  /power-calculations/{id}:
+    delete:
+      description: Удаляет черновик (только создатель)
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Удалить заявку
+      tags:
+      - power-calculations
+    get:
+      description: Возвращает полную информацию о заявке с услугами и количеством
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.PowerCalculationResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Получить заявку по ID
+      tags:
+      - power-calculations
+    put:
+      consumes:
+      - application/json
+      description: Изменяет параметры ЦОД (только для черновиков)
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Поля для обновления
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/http.UpdateCalculationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Обновить поля заявки
+      tags:
+      - power-calculations
+  /power-calculations/{id}/complete:
+    put:
+      description: Вычисляет итоговую мощность, завершает заявку (только модератор)
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Завершить заявку
+      tags:
+      - power-calculations
+  /power-calculations/{id}/devices:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет оборудование в черновик заявки
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Данные услуги
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.AddDeviceRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Добавить услугу в заявку
+      tags:
+      - power_calculations-devices
+  /power-calculations/{id}/devices/{device_id}:
+    delete:
+      description: Удаляет оборудование из заявки
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID услуги
+        in: path
+        name: device_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Удалить услугу из заявки
+      tags:
+      - power_calculations-devices
+    put:
+      consumes:
+      - application/json
+      description: Обновляет количество оборудования в заявке
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: ID услуги
+        in: path
+        name: device_id
+        required: true
+        type: integer
+      - description: Новое количество
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.UpdateDeviceQuantityRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Изменить количество услуги в заявке
+      tags:
+      - power_calculations-devices
+  /power-calculations/{id}/form:
+    put:
+      description: Переводит черновик в статус "formed" (только создатель)
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Сформировать заявку
+      tags:
+      - power-calculations
+  /power-calculations/{id}/reject:
+    put:
+      description: Отклоняет сформированную заявку (только модератор)
+      parameters:
+      - description: ID заявки
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Отклонить заявку
+      tags:
+      - power-calculations
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Возвращает JWT-токен для авторизации
+      parameters:
+      - description: Данные для входа
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      summary: Аутентификация
+      tags:
+      - auth
+  /users/logout:
+    post:
+      description: Добавляет токен в blacklist (Redis)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Выход из системы
+      tags:
+      - auth
+  /users/me:
+    get:
+      description: Возвращает данные авторизованного пользователя
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.UserResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Получить профиль текущего пользователя
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      description: Обновляет поля профиля (например, username)
+      parameters:
+      - description: Поля для обновления
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/http.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Обновить профиль
+      tags:
+      - users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт нового пользователя с ролью "user"
+      parameters:
+      - description: Данные регистрации
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/http.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/http.SuccessMessage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/http.ErrorResponse'
+      summary: Регистрация нового пользователя
+      tags:
+      - users
+securityDefinitions:
+  Bearer:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -22,6 +22,16 @@ func NewCalculationHandler(calc *usecase.PowerCalculator, minioURL string) *Calc
 	return &CalculationHandler{Calculator: calc, MinIOURL: minioURL}
 }
 
+// GetCalculations godoc
+// @Summary Получить список заявок
+// @Description Для гостей — только completed/rejected. Для пользователей — только свои. Для модераторов — все.
+// @Tags power-calculations
+// @Produce json
+// @Param status query string false "Фильтр по статусу (через запятую)"
+// @Param from_date query string false "Дата формирования от (формат: 2025-01-01)"
+// @Param to_date query string false "Дата формирования до (формат: 2025-12-31)"
+// @Success 200 {array} PowerCalculationResponse
+// @Router /power-calculations [get]
 func (h *CalculationHandler) GetCalculations(c *gin.Context) {
 	userID := auth.UserIDFromContext(c)
 	role := auth.UserRoleFromContext(c)
@@ -68,6 +78,17 @@ func (h *CalculationHandler) GetCalculations(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
+// GetCalculation godoc
+// @Summary Получить заявку по ID
+// @Description Возвращает полную информацию о заявке с услугами и количеством
+// @Tags power-calculations
+// @Security Bearer
+// @Produce json
+// @Param id path int true "ID заявки"
+// @Success 200 {object} PowerCalculationResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /power-calculations/{id} [get]
 func (h *CalculationHandler) GetCalculation(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	userID := auth.UserIDFromContext(c)
@@ -121,6 +142,17 @@ func (h *CalculationHandler) GetCalculation(c *gin.Context) {
 	})
 }
 
+// FormCalculation godoc
+// @Summary Сформировать заявку
+// @Description Переводит черновик в статус "formed" (только создатель)
+// @Tags power-calculations
+// @Security Bearer
+// @Produce json
+// @Param id path int true "ID заявки"
+// @Success 200 {object} SuccessMessage
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Router /power-calculations/{id}/form [put]
 func (h *CalculationHandler) FormCalculation(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	userID := auth.UserIDFromContext(c)
@@ -139,6 +171,17 @@ func (h *CalculationHandler) FormCalculation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "formed"})
 }
 
+// CompleteCalculation godoc
+// @Summary Завершить заявку
+// @Description Вычисляет итоговую мощность, завершает заявку (только модератор)
+// @Tags power-calculations
+// @Security Bearer
+// @Produce json
+// @Param id path int true "ID заявки"
+// @Success 200 {object} SuccessMessage
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Router /power-calculations/{id}/complete [put]
 func (h *CalculationHandler) CompleteCalculation(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 
@@ -150,6 +193,17 @@ func (h *CalculationHandler) CompleteCalculation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "completed"})
 }
 
+// RejectCalculation godoc
+// @Summary Отклонить заявку
+// @Description Отклоняет сформированную заявку (только модератор)
+// @Tags power-calculations
+// @Security Bearer
+// @Produce json
+// @Param id path int true "ID заявки"
+// @Success 200 {object} SuccessMessage
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Router /power-calculations/{id}/reject [put]
 func (h *CalculationHandler) RejectCalculation(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 
@@ -161,6 +215,17 @@ func (h *CalculationHandler) RejectCalculation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "rejected"})
 }
 
+// DeleteCalculation godoc
+// @Summary Удалить заявку
+// @Description Удаляет черновик (только создатель)
+// @Tags power-calculations
+// @Security Bearer
+// @Produce json
+// @Param id path int true "ID заявки"
+// @Success 200 {object} SuccessMessage
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /power-calculations/{id} [delete]
 func (h *CalculationHandler) DeleteCalculation(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	userID := auth.UserIDFromContext(c)
@@ -175,6 +240,20 @@ func (h *CalculationHandler) DeleteCalculation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "deleted"})
 }
 
+// UpdateCalculationFields godoc
+// @Summary Обновить поля заявки
+// @Description Изменяет параметры ЦОД (только для черновиков)
+// @Tags power-calculations
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param id path int true "ID заявки"
+// @Param request body UpdateCalculationRequest false "Поля для обновления"
+// @Success 200 {object} SuccessMessage
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 404 {object} ErrorResponse
+// @Router /power-calculations/{id} [put]
 func (h *CalculationHandler) UpdateCalculationFields(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

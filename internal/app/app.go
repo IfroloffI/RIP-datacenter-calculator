@@ -112,6 +112,10 @@ func New(cfg *config.Config) *App {
 	return &App{engine: r}
 }
 
+func (a *App) GetEngine() *gin.Engine {
+	return a.engine
+}
+
 func (a *App) Run() error {
 	return a.engine.Run(":8080")
 }

@@ -19,6 +19,20 @@ func NewMMHandler(calcRepo *repo.CalculationRepository) *MMHandler {
 	return &MMHandler{CalcRepo: calcRepo}
 }
 
+// AddDeviceToCalculation godoc
+// @Summary Добавить услугу в заявку
+// @Description Добавляет оборудование в черновик заявки
+// @Tags power_calculations-devices
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param id path int true "ID заявки"
+// @Param request body AddDeviceRequest true "Данные услуги"
+// @Success 201 {object} SuccessMessage
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /power-calculations/{id}/devices [post]
 func (h *MMHandler) AddDeviceToCalculation(c *gin.Context) {
 	userID := auth.UserIDFromContext(c)
 	calcID, _ := strconv.Atoi(c.Param("id"))
@@ -46,6 +60,21 @@ func (h *MMHandler) AddDeviceToCalculation(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"status": "added"})
 }
 
+// UpdateDeviceInCalculation godoc
+// @Summary Изменить количество услуги в заявке
+// @Description Обновляет количество оборудования в заявке
+// @Tags power_calculations-devices
+// @Security Bearer
+// @Accept json
+// @Produce json
+// @Param id path int true "ID заявки"
+// @Param device_id path int true "ID услуги"
+// @Param request body UpdateDeviceQuantityRequest true "Новое количество"
+// @Success 200 {object} SuccessMessage
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /power-calculations/{id}/devices/{device_id} [put]
 func (h *MMHandler) UpdateDeviceInCalculation(c *gin.Context) {
 	userID := auth.UserIDFromContext(c)
 	calcID, _ := strconv.Atoi(c.Param("id"))
@@ -73,6 +102,18 @@ func (h *MMHandler) UpdateDeviceInCalculation(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
 }
 
+// RemoveDeviceFromCalculation godoc
+// @Summary Удалить услугу из заявки
+// @Description Удаляет оборудование из заявки
+// @Tags power_calculations-devices
+// @Security Bearer
+// @Produce json
+// @Param id path int true "ID заявки"
+// @Param device_id path int true "ID услуги"
+// @Success 200 {object} SuccessMessage
+// @Failure 403 {object} ErrorResponse
+// @Failure 500 {object} ErrorResponse
+// @Router /power-calculations/{id}/devices/{device_id} [delete]
 func (h *MMHandler) RemoveDeviceFromCalculation(c *gin.Context) {
 	userID := auth.UserIDFromContext(c)
 	calcID, _ := strconv.Atoi(c.Param("id"))
