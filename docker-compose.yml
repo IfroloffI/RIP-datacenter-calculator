@@ -23,7 +23,7 @@ services:
     ports:
       - "8082:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     restart: unless-stopped
 
   adminer:
@@ -42,6 +42,7 @@ services:
     environment:
       - REDIS_DATABASE=0
       - REDIS_PASSWORD=secret
+    command: redis-server --requirepass secret
     volumes:
       - redis_data:/data
     restart: unless-stopped

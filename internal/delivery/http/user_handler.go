@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 
 	"datacenter-calc/internal/auth"
@@ -92,6 +93,7 @@ func (h *UserHandler) LogoutUser(c *gin.Context) {
 	}
 	token := authHeader[len("Bearer "):]
 	if err := h.Usecase.Logout(c.Request.Context(), token); err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "logout failed"})
 		return
 	}
