@@ -54,6 +54,7 @@ func New(cfg *config.Config) *App {
 		devicesPublic := api.Group("/devices")
 		{
 			devicesPublic.GET("", handler.DeviceHandler.GetDevices)
+			devicesPublic.GET("/:id", handler.DeviceHandler.GetDevice)
 		}
 
 		usersPublic := api.Group("/users")
@@ -66,8 +67,6 @@ func New(cfg *config.Config) *App {
 	authed := api.Group("")
 	authed.Use(auth.AuthMiddleware(redisClient, model.RoleUser, model.RoleModerator))
 	{
-		authed.GET("/devices/:id", handler.DeviceHandler.GetDevice)
-
 		authed.GET("/cart", handler.CartHandler.GetCartInfo)
 
 		calc := authed.Group("/power-calculations")
