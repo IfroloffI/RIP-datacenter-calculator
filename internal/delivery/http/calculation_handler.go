@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"datacenter-calc/internal/auth"
+	"datacenter-calc/internal/dto"
 	"datacenter-calc/internal/model"
 	"datacenter-calc/internal/usecase"
 
@@ -16,10 +17,11 @@ import (
 type CalculationHandler struct {
 	Calculator *usecase.PowerCalculator
 	MinIOURL   string
+	AsyncToken string
 }
 
-func NewCalculationHandler(calc *usecase.PowerCalculator, minioURL string) *CalculationHandler {
-	return &CalculationHandler{Calculator: calc, MinIOURL: minioURL}
+func NewCalculationHandler(calc *usecase.PowerCalculator, minioURL string, asyncToken string) *CalculationHandler {
+	return &CalculationHandler{Calculator: calc, MinIOURL: minioURL, AsyncToken: asyncToken}
 }
 
 // GetCalculations godoc
@@ -314,4 +316,37 @@ func (h *CalculationHandler) UpdateCalculationFields(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"status": "updated"})
+}
+
+// ProcessAsyncResult godoc
+// @Summary Применить результат асинхронного расчёта
+// @Description Внутренний вебхук, вызывается асинхронным сервисом после завершения расчёта. НЕ использовать из пользовательского/админского интерфейса.
+// @Tags power-calculations
+// @Accept json
+// @Produce json
+// @Param X-Async-Token header string true "Секретный токен асинхронного сервиса"
+// @Param request body dto.AsyncResultRequest true "Результат асинхронного расчёта"
+// @Success 200 {object} SuccessMessage
+// @Failure 400 {object} ErrorResponse
+// @Failure 403 {object} ErrorResponse "Неверный токен"
+// @Router /power-calculations/process-result [put]
+func (h *CalculationHandler) ProcessAsyncResult(c *gin.Context) {
+	var req dto.AsyncResultRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	token := c.GetHeader("X-Async-Token")
+	if token != h.AsyncToken {
+		c.JSON(http.StatusForbidden, gin.H{"error": "bad async token"})
+		return
+	}
+
+	if err := h.Calculator.ProcessAsyncResult(req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"status": "async result applied"})
 }

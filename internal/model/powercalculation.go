@@ -5,11 +5,13 @@ import "time"
 type CalculationStatus string
 
 const (
-	StatusDraft     CalculationStatus = "draft"
-	StatusDeleted   CalculationStatus = "deleted"
-	StatusFormed    CalculationStatus = "formed"
-	StatusCompleted CalculationStatus = "completed"
-	StatusRejected  CalculationStatus = "rejected"
+	StatusDraft      CalculationStatus = "draft"
+	StatusDeleted    CalculationStatus = "deleted"
+	StatusFormed     CalculationStatus = "formed"
+	StatusProcessing CalculationStatus = "processing"
+	StatusCompleted  CalculationStatus = "completed"
+	StatusRejected   CalculationStatus = "rejected"
+	StatusFailed     CalculationStatus = "failed"
 )
 
 type PowerCalculation struct {
@@ -20,7 +22,7 @@ type PowerCalculation struct {
 	FormedAt    *time.Time
 	CompletedAt *time.Time
 	ModeratorID *uint
-	TotalPower  *int // вычисляется при завершении
+	TotalPower  *int
 
 	DCName        string  `gorm:"type:varchar(255);default:null"`
 	DCDescription string  `gorm:"type:text;default:null"`

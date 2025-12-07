@@ -33,6 +33,11 @@ type Config struct {
 		Port     int    `mapstructure:"port"`
 		Password string `mapstructure:"password"`
 	} `mapstructure:"redis"`
+
+	CalcPowerService struct {
+		URL        string `mapstructure:"url"`
+		AsyncToken string `mapstructure:"async_token"`
+	} `mapstructure:"calc_power_service"`
 }
 
 func LoadConfig(path string) (*Config, error) {

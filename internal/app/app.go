@@ -42,7 +42,7 @@ func New(cfg *config.Config) *App {
 	calcRepo := &repo.CalculationRepository{DB: dbConn}
 	userRepo := &repo.UserRepo{DB: dbConn}
 
-	calculator := usecase.NewPowerCalculator(deviceRepo, calcRepo, minioClient)
+	calculator := usecase.NewPowerCalculator(deviceRepo, calcRepo, minioClient, cfg.CalcPowerService.URL)
 	userUsecase := usecase.NewUserUsecase(userRepo, redisClient, cfg.JWT.Exp)
 
 	handler := http.NewHandler(calculator, userUsecase, cfg)
@@ -80,6 +80,8 @@ func New(cfg *config.Config) *App {
 			calc.POST("/:id/devices", handler.MMHandler.AddDeviceToCalculation)
 			calc.PUT("/:id/devices/:device_id", handler.MMHandler.UpdateDeviceInCalculation)
 			calc.DELETE("/:id/devices/:device_id", handler.MMHandler.RemoveDeviceFromCalculation)
+
+			calc.PUT("/process-result", handler.CalculationHandler.ProcessAsyncResult)
 		}
 
 		users := authed.Group("/users")

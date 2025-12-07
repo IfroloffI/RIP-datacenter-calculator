@@ -18,7 +18,7 @@ func NewHandler(calculator *usecase.PowerCalculator, userUsecase *usecase.UserUs
 
 	return &Handler{
 		DeviceHandler:      NewDeviceHandler(calculator.DeviceRepo, calculator.MinIOClient, minioURL),
-		CalculationHandler: NewCalculationHandler(calculator, minioURL),
+		CalculationHandler: NewCalculationHandler(calculator, minioURL, cfg.CalcPowerService.AsyncToken),
 		CartHandler:        NewCartHandler(calculator.CalculationRepo),
 		MMHandler:          NewMMHandler(calculator.CalculationRepo),
 		UserHandler:        NewUserHandler(userUsecase),
