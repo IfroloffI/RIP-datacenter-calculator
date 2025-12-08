@@ -21,4 +21,15 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    @Bean(name = "calculationWebHook")
+    public Executor calculationWebHookExecutor() {
+        ThreadPoolTaskExecutor exec = new ThreadPoolTaskExecutor();
+        exec.setCorePoolSize(4);
+        exec.setMaxPoolSize(8);
+        exec.setQueueCapacity(200);
+        exec.setThreadNamePrefix("webhook-");
+        exec.initialize();
+        return exec;
+    }
 }
