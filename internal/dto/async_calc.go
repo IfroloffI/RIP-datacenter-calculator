@@ -7,14 +7,16 @@ type AsyncDevicePayload struct {
 }
 
 type AsyncCalculationRequest struct {
-	CalculationID uint                 `json:"calculation_id"`
-	Devices       []AsyncDevicePayload `json:"devices"`
+	CalculationID uint `json:"calculation_id"`
+	PUE
+	Devices []AsyncDevicePayload `json:"devices"`
 }
 
 /*
 Example of Request 1 (many devices):
 {
   "calculation_id": 42,
+  "pue": 1.55,
   "devices": [
     {
       "id": 1,
@@ -32,6 +34,7 @@ Example of Request 1 (many devices):
 Example of Request 2 (single device):
 {
   "calculation_id": 7,
+  "pue": 1.3,
   "devices": [
     {
       "id": 5,

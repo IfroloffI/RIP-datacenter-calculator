@@ -35,15 +35,18 @@ type PowerCalculation struct {
 }
 
 type PowerCalculationResponse struct {
-	ID          uint              `json:"id"`
-	Status      CalculationStatus `json:"status"`
-	CreatedAt   time.Time         `json:"created_at"`
-	FormedAt    *time.Time        `json:"formed_at,omitempty"`
-	CompletedAt *time.Time        `json:"completed_at,omitempty"`
-	TotalPower  *int              `json:"total_power,omitempty"`
-	Creator     string            `json:"creator"`
-	Moderator   *string           `json:"moderator,omitempty"`
-	Devices     []DeviceResponse  `json:"devices"`
+	ID            uint              `json:"id"`
+	Status        CalculationStatus `json:"status"`
+	CreatedAt     time.Time         `json:"created_at"`
+	FormedAt      *time.Time        `json:"formed_at,omitempty"`
+	CompletedAt   *time.Time        `json:"completed_at,omitempty"`
+	TotalPower    *int              `json:"total_power,omitempty"`
+	Creator       string            `json:"creator"`
+	Moderator     *string           `json:"moderator,omitempty"`
+	DCName        string            `json:"dc_name,omitempty"`
+	DCDescription string            `json:"dc_description,omitempty"`
+	PUE           float64           `json:"pue,omitempty"`
+	Devices       []DeviceResponse  `json:"devices"`
 }
 
 func (p *PowerCalculation) ToResponse(minioURL string) PowerCalculationResponse {
@@ -60,15 +63,18 @@ func (p *PowerCalculation) ToResponse(minioURL string) PowerCalculationResponse 
 	}
 
 	return PowerCalculationResponse{
-		ID:          p.ID,
-		Status:      p.Status,
-		CreatedAt:   p.CreatedAt,
-		FormedAt:    p.FormedAt,
-		CompletedAt: p.CompletedAt,
-		TotalPower:  p.TotalPower,
-		Creator:     creator,
-		Moderator:   moderator,
-		Devices:     devices,
+		ID:            p.ID,
+		Status:        p.Status,
+		CreatedAt:     p.CreatedAt,
+		FormedAt:      p.FormedAt,
+		CompletedAt:   p.CompletedAt,
+		TotalPower:    p.TotalPower,
+		Creator:       creator,
+		Moderator:     moderator,
+		DCName:        p.DCName,
+		DCDescription: p.DCDescription,
+		PUE:           p.PUE,
+		Devices:       devices,
 	}
 }
 

@@ -46,14 +46,12 @@ func (r *CalculationRepository) AddDeviceToCalculation(calcID, deviceID uint, qu
 
 func (r *CalculationRepository) GetCalculationWithDevices(calcID uint) (*model.PowerCalculation, error) {
 	var calc model.PowerCalculation
-	if err := r.DB.First(&calc, calcID).Error; err != nil {
-		return nil, err
-	}
 
-	if calc.CreatedBy != 0 {
-		var user model.User
-		r.DB.Select("id, username").Where("id = ?", calc.CreatedBy).First(&user)
-		calc.User = user
+	if err := r.DB.
+		Preload("User").
+		Preload("Moderator").
+		First(&calc, calcID).Error; err != nil {
+		return nil, err
 	}
 
 	type DeviceWithQty struct {
@@ -102,7 +100,12 @@ func (r *CalculationRepository) UpdateCalculation(calc *model.PowerCalculation) 
 }
 
 func (r *CalculationRepository) GetCalculationsFiltered(status []model.CalculationStatus, fromDate, toDate *time.Time) ([]model.PowerCalculation, error) {
-	query := r.DB.Where("status != ?", model.StatusDeleted).Where("status != ?", model.StatusDraft)
+	query := r.DB.
+		Preload("User").
+		Preload("Moderator").
+		Preload("Devices").
+		Where("status != ?", model.StatusDeleted).
+		Where("status != ?", model.StatusDraft)
 
 	if len(status) > 0 {
 		query = query.Where("status IN ?", status)
@@ -115,8 +118,15 @@ func (r *CalculationRepository) GetCalculationsFiltered(status []model.Calculati
 	}
 
 	var calcs []model.PowerCalculation
-	err := query.Preload("User").Preload("Moderator").Find(&calcs).Error
-	return calcs, err
+	if err := query.Find(&calcs).Error; err != nil {
+		return nil, err
+	}
+
+	for i := range calcs {
+		r.loadDeviceQuantities(&calcs[i])
+	}
+
+	return calcs, nil
 }
 
 func (r *CalculationRepository) UpdateDeviceQuantity(calcID, deviceID uint, quantity int) error {
@@ -131,7 +141,11 @@ func (r *CalculationRepository) RemoveDeviceFromCalculation(calcID, deviceID uin
 }
 
 func (r *CalculationRepository) GetCalculationsByUser(userID uint, statuses []model.CalculationStatus, fromDate, toDate *time.Time) ([]model.PowerCalculation, error) {
-	query := r.DB.Where("created_by = ? AND status != ? AND status != ?", userID, model.StatusDeleted, model.StatusDraft)
+	query := r.DB.
+		Preload("User").
+		Preload("Moderator").
+		Preload("Devices").
+		Where("created_by = ? AND status != ? AND status != ?", userID, model.StatusDeleted, model.StatusDraft)
 
 	if len(statuses) > 0 {
 		query = query.Where("status IN ?", statuses)
@@ -144,13 +158,24 @@ func (r *CalculationRepository) GetCalculationsByUser(userID uint, statuses []mo
 	}
 
 	var calcs []model.PowerCalculation
-	err := query.Preload("User").Preload("Moderator").Find(&calcs).Error
-	return calcs, err
+	if err := query.Find(&calcs).Error; err != nil {
+		return nil, err
+	}
+
+	for i := range calcs {
+		r.loadDeviceQuantities(&calcs[i])
+	}
+
+	return calcs, nil
 }
 
 func (r *CalculationRepository) GetPublicCalculations(statuses []model.CalculationStatus, fromDate, toDate *time.Time) ([]model.PowerCalculation, error) {
 	allowed := []model.CalculationStatus{model.StatusCompleted, model.StatusRejected}
-	query := r.DB.Where("status IN ?", allowed)
+	query := r.DB.
+		Preload("User").
+		Preload("Moderator").
+		Preload("Devices").
+		Where("status IN ?", allowed)
 
 	if len(statuses) > 0 {
 		filtered := []model.CalculationStatus{}
@@ -174,6 +199,31 @@ func (r *CalculationRepository) GetPublicCalculations(statuses []model.Calculati
 	}
 
 	var calcs []model.PowerCalculation
-	err := query.Preload("User").Preload("Moderator").Find(&calcs).Error
-	return calcs, err
+	if err := query.Find(&calcs).Error; err != nil {
+		return nil, err
+	}
+
+	for i := range calcs {
+		r.loadDeviceQuantities(&calcs[i])
+	}
+
+	return calcs, nil
+}
+
+func (r *CalculationRepository) loadDeviceQuantities(calc *model.PowerCalculation) {
+	type DeviceWithQty struct {
+		DeviceID uint
+		Quantity int
+	}
+
+	var results []DeviceWithQty
+	r.DB.Table("power_calculation_devices").
+		Select("device_id, quantity").
+		Where("calculation_id = ?", calc.ID).
+		Scan(&results)
+
+	calc.DeviceQuantities = make(map[uint]int)
+	for _, dq := range results {
+		calc.DeviceQuantities[dq.DeviceID] = dq.Quantity
+	}
 }

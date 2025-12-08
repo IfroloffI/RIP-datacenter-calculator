@@ -132,15 +132,18 @@ func (h *CalculationHandler) GetCalculation(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":           calc.ID,
-		"status":       calc.Status,
-		"created_at":   calc.CreatedAt,
-		"formed_at":    calc.FormedAt,
-		"completed_at": calc.CompletedAt,
-		"total_power":  calc.TotalPower,
-		"creator":      creator,
-		"moderator":    moderator,
-		"devices":      devicesResp,
+		"id":             calc.ID,
+		"status":         calc.Status,
+		"created_at":     calc.CreatedAt,
+		"formed_at":      calc.FormedAt,
+		"completed_at":   calc.CompletedAt,
+		"total_power":    calc.TotalPower,
+		"creator":        creator,
+		"moderator":      moderator,
+		"dc_name":        calc.DCName,
+		"dc_description": calc.DCDescription,
+		"pue":            calc.PUE,
+		"devices":        devicesResp,
 	})
 }
 

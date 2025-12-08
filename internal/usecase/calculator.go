@@ -15,6 +15,9 @@ import (
 
 var zero = 0
 
+const maxRetries = 3
+const retryDelay = 500 * time.Millisecond
+
 type PowerCalculator struct {
 	DeviceRepo          *repo.DeviceRepository
 	CalculationRepo     *repo.CalculationRepository
@@ -56,6 +59,7 @@ func (c *PowerCalculator) CompleteCalculation(calcID, moderatorID uint) error {
 	if err != nil {
 		return err
 	}
+
 	if calc.Status != model.StatusFormed {
 		return errors.New("можно завершать только сформированные заявки")
 	}
@@ -69,43 +73,10 @@ func (c *PowerCalculator) CompleteCalculation(calcID, moderatorID uint) error {
 		return errors.New("нельзя запускать расчёт для заявки без устройств")
 	}
 
-	payload := dto.AsyncCalculationRequest{
-		CalculationID: calc.ID,
-		Devices:       make([]dto.AsyncDevicePayload, 0, len(calc.Devices)),
-	}
+	payload := c.buildAsyncPayload(calc)
 
-	for _, d := range calc.Devices {
-		qty := calc.DeviceQuantities[d.ID]
-		payload.Devices = append(payload.Devices, dto.AsyncDevicePayload{
-			ID:        d.ID,
-			Quantity:  qty,
-			PowerWatt: d.PowerWatt,
-		})
-	}
-
-	body, err := json.Marshal(payload)
-	if err != nil {
+	if err := c.sendAsyncCalculationWithRetry(payload); err != nil {
 		return err
-	}
-
-	req, err := http.NewRequest(
-		http.MethodPost,
-		c.CalcPowerServiceURL,
-		bytes.NewReader(body),
-	)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return errors.New("async service returned non-2xx status")
 	}
 
 	now := time.Now()
@@ -152,4 +123,71 @@ func (c *PowerCalculator) ProcessAsyncResult(req dto.AsyncResultRequest) error {
 	}
 
 	return c.CalculationRepo.UpdateCalculation(calc)
+}
+
+func (c *PowerCalculator) buildAsyncPayload(calc *model.PowerCalculation) dto.AsyncCalculationRequest {
+	payload := dto.AsyncCalculationRequest{
+		CalculationID: calc.ID,
+		PUE:           calc.PUE,
+		Devices:       make([]dto.AsyncDevicePayload, 0, len(calc.Devices)),
+	}
+
+	for _, d := range calc.Devices {
+		qty := calc.DeviceQuantities[d.ID]
+		payload.Devices = append(payload.Devices, dto.AsyncDevicePayload{
+			ID:        d.ID,
+			Quantity:  qty,
+			PowerWatt: d.PowerWatt,
+		})
+	}
+
+	return payload
+}
+
+func (c *PowerCalculator) sendAsyncCalculationWithRetry(payload dto.AsyncCalculationRequest) error {
+	var lastErr error
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		body, err := json.Marshal(payload)
+		if err != nil {
+			return err
+		}
+
+		req, err := http.NewRequest(
+			http.MethodPost,
+			c.CalcPowerServiceURL,
+			bytes.NewReader(body),
+		)
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			lastErr = err
+			if attempt < maxRetries {
+				time.Sleep(retryDelay)
+				continue
+			}
+			return errors.New("async service unreachable after retries: " + err.Error())
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			return nil
+		}
+
+		if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+			return errors.New("async service returned client error: " + resp.Status)
+		}
+
+		lastErr = errors.New("async service returned server error: " + resp.Status)
+		if attempt < maxRetries {
+			time.Sleep(retryDelay)
+			continue
+		}
+	}
+
+	return errors.New("async service failed after " + string(rune(maxRetries)) + " retries: " + lastErr.Error())
 }

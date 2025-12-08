@@ -62,6 +62,11 @@ func New(cfg *config.Config) *App {
 			usersPublic.POST("/register", handler.UserHandler.RegisterUser)
 			usersPublic.POST("/login", handler.UserHandler.LoginUser)
 		}
+
+		internalPublic := api.Group("/power-calculations")
+		{
+			internalPublic.PUT("/process-result", handler.CalculationHandler.ProcessAsyncResult)
+		}
 	}
 
 	authed := api.Group("")
@@ -80,8 +85,6 @@ func New(cfg *config.Config) *App {
 			calc.POST("/:id/devices", handler.MMHandler.AddDeviceToCalculation)
 			calc.PUT("/:id/devices/:device_id", handler.MMHandler.UpdateDeviceInCalculation)
 			calc.DELETE("/:id/devices/:device_id", handler.MMHandler.RemoveDeviceFromCalculation)
-
-			calc.PUT("/process-result", handler.CalculationHandler.ProcessAsyncResult)
 		}
 
 		users := authed.Group("/users")
