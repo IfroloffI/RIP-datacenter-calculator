@@ -7,9 +7,9 @@ type AsyncDevicePayload struct {
 }
 
 type AsyncCalculationRequest struct {
-	CalculationID uint `json:"calculation_id"`
-	PUE
-	Devices []AsyncDevicePayload `json:"devices"`
+	CalculationID uint                 `json:"calculation_id"`
+	PUE           float64              `json:"pue"`
+	Devices       []AsyncDevicePayload `json:"devices"`
 }
 
 /*
