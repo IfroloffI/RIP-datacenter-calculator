@@ -70,7 +70,10 @@ func New(cfg *config.Config) *App {
 	}
 
 	authed := api.Group("")
-	authed.Use(auth.AuthMiddleware(redisClient, model.RoleUser, model.RoleModerator))
+	authed.Use(
+		auth.CartGuestMiddleware(),
+		auth.AuthMiddleware(redisClient, model.RoleUser, model.RoleModerator),
+	)
 	{
 		authed.GET("/cart", handler.CartHandler.GetCartInfo)
 

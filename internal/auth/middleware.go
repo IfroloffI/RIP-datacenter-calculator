@@ -75,3 +75,24 @@ func GuestOrAuthMiddleware(redisClient *redis.RedisClient) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func CartGuestMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.FullPath() != "/api/cart" {
+			c.Next()
+			return
+		}
+
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusOK, gin.H{
+				"calculation_id": -1,
+				"total_items":    0,
+			})
+			c.Abort()
+			return
+		}
+
+		c.Next()
+	}
+}
