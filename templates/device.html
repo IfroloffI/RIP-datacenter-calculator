@@ -1,0 +1,20 @@
+{{ define "content" }}
+<div class="container">
+    <div class="device-detail">
+        <div class="device-detail-image">
+            <img src="{{ .MinIOURL }}/{{ .Device.ImageURL }}" alt="{{ .Device.Name }}"
+                onerror="this.src='/static/placeholder.jpeg'">
+        </div>
+
+        <div class="device-detail-info">
+            <h1>{{ .Device.Name }}</h1>
+            <p class="device-detail-category">Категория: {{ .Device.Category }}</p>
+            <p class="device-detail-power">Мощность: {{ .Device.PowerWatt }} Вт</p>
+            <p class="device-detail-description">{{ .Device.Description }}</p>
+        </div>
+        <!-- <div class="device-detail-actions"> -->
+        <!-- <a href="/" class="device-detail-back-button">← Назад</a> -->
+        <!-- </div> -->
+    </div>
+</div>
+{{ end }}

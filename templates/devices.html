@@ -1,0 +1,53 @@
+{{ define "content" }}
+<div class="container">
+    <section class="search-section">
+        <h1 class="page-title">Список оборудования</h1>
+        <form class="search-form" action="/" method="GET">
+            <input type="text" name="q" value="{{ .SearchQuery }}" placeholder="Поиск оборудования..."
+                class="search-input">
+            <button type="submit" class="search-button">Найти</button>
+        </form>
+
+        {{ if and .DraftCalculationID (gt .TotalItems 0) }}
+        <a href="/powercalculation/{{ .DraftCalculationID }}" class="current-calculation">
+            <img src="/static/basket.png" width="50" height="50">
+            <span class="calculation-count">{{ .TotalItems }}</span>
+        </a>
+        {{ else }}
+        <span class="current-calculation" style="opacity:0.5; cursor:not-allowed;">
+            <img src="/static/basket.png" width="50" height="50">
+            <span class="calculation-count">0</span>
+        </span>
+        {{ end }}
+    </section>
+
+    <section class="devices-grid">
+        {{ range .Devices }}
+        <div class="device-card">
+            <div class="device-image">
+                <img src="{{ $.MinIOURL }}/{{ .ImageURL }}" alt="{{ .Name }}"
+                    onerror="this.src='/static/placeholder.jpeg'" class="device-image-img">
+            </div>
+            <div class="device-info">
+                <h3 class="device-name">{{ .Name }}</h3>
+                <p class="device-power">Мощность: {{ .PowerWatt }} Вт</p>
+            </div>
+            <div class="device-actions">
+                <a href="/device/{{ .ID }}" class="details-button">Подробнее</a>
+                <form method="POST" action="/powercalculation/add" style="margin:0;">
+                    <input type="hidden" name="device_id" value="{{ .ID }}">
+                    <input type="hidden" name="search_query" value="{{ $.SearchQuery }}">
+                    <button type="submit" class="add-button">В расчёт</button>
+                </form>
+            </div>
+        </div>
+        {{ end }}
+    </section>
+
+    {{ if not .Devices }}
+    <div class="no-results">
+        <p>Оборудование не найдено. Попробуйте изменить поисковый запрос.</p>
+    </div>
+    {{ end }}
+</div>
+{{ end }}

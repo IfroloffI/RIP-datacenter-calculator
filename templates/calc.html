@@ -1,0 +1,82 @@
+{{ define "content" }}
+<div class="container">
+    <section class="calculation-section">
+        <h1 class="page-title">Текущий расчёт</h1>
+
+        <div class="top-thirds">
+            <div class="third">
+                <h3 class="section-label">Параметры дата-центра</h3>
+                <div class="input-group">
+                    <label for="dc-name">Название дата-центра</label>
+                    <input type="text" id="dc-name" placeholder="Введите название">
+                </div>
+                <div class="input-group">
+                    <label for="dc-description">Описание</label>
+                    <textarea id="dc-description" placeholder="Описание дата-центра"></textarea>
+                </div>
+                <div class="input-group">
+                    <label for="dc-pue">Коэффициент PUE*</label>
+                    <input type="number" id="dc-pue" step="0.01" value="1.5" min="1.0">
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="third">
+                <h3 class="section-label">Итоговые показатели</h3>
+                <div class="result-item">
+                    <span class="result-label">Итоговая мощность дата-центра:</span>
+                    <span class="result-value">[Расчёт отключен]</span>
+                    <!-- <span class="result-value">{{ .PUEPower }} кВт</span> !-->
+                </div>
+                <div class="result-item">
+                    <span class="result-label">Годовое потребление:</span>
+                    <span class="result-value">[Расчёт отключен]</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="devices-list-section">
+            <h3>Устройства в расчёте:</h3>
+
+            {{ if .Devices }}
+            <div class="calculation-devices-list">
+                {{ range .Devices }}
+                <div class="device-entry">
+                    <div class="device-field">
+                        <div class="calculation-device-image">
+                            <img src="{{ $.MinIOURL }}/{{ .ImageURL }}" alt="{{ .Name }}"
+                                onerror="this.src='/static/placeholder.jpeg'">
+                        </div>
+                    </div>
+                    <div class="device-field">
+                        <label>Оборудование</label>
+                        <div class="device-name-display">{{ .Name }}</div>
+                    </div>
+                    <div class="device-field">
+                        <label>Количество</label>
+                        <div class="device-quantity-display">{{ .Count }}</div>
+                    </div>
+                    <div class="device-field">
+                        <label>Промежуточная Мощность</label>
+                        <div class="device-total-power">{{ .InterPowerWatt }} Вт</div>
+                    </div>
+                </div>
+                {{ end }}
+            </div>
+            {{ else }}
+            <p class="no-devices">Нет устройств в расчёте</p>
+            {{ end }}
+        </div>
+
+        <div class="calculation-actions">
+            {{ if eq .Calculation.Status "draft" }}
+            <form method="POST" action="/powercalculation/{{ .Calculation.ID }}/delete">
+                <button type="submit" class="details-button" style="background:#ff4d4d;color:white;">Удалить
+                    расчёт</button>
+            </form>
+            {{ end }}
+        </div>
+    </section>
+</div>
+{{ end }}

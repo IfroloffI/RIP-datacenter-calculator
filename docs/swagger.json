@@ -1,0 +1,1390 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API для расчёта мощности ЦОД (лабораторная №4)",
+        "title": "Datacenter Calculator API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/api",
+    "paths": {
+        "/cart": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Возвращает ID черновика и количество услуг в нём",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart"
+                ],
+                "summary": "Получить информацию о корзине",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.CartResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/devices": {
+            "get": {
+                "description": "Получение списка оборудования с фильтрацией по названию или категории",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "devices"
+                ],
+                "summary": "Получить список услуг",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Поисковый запрос",
+                        "name": "q",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/http.DeviceResponse"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Добавление нового оборудования в каталог (только модератор)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "devices"
+                ],
+                "summary": "Создать новую услугу",
+                "parameters": [
+                    {
+                        "description": "Данные услуги",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.CreateDeviceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/http.DeviceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/devices/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Получение детальной информации об оборудовании",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "devices"
+                ],
+                "summary": "Получить услугу по ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID услуги",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.DeviceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Изменение данных оборудования (только модератор)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "devices"
+                ],
+                "summary": "Обновить услугу",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID услуги",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Поля для обновления",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/http.UpdateDeviceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.DeviceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Помечает оборудование как удалённое (soft delete, только модератор)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "devices"
+                ],
+                "summary": "Удалить услугу",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID услуги",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/devices/{id}/image": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Заменяет текущее изображение оборудования (только модератор)",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "devices"
+                ],
+                "summary": "Загрузить изображение для услуги",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID услуги",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Изображение",
+                        "name": "image",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.ImageUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/power-calculations": {
+            "get": {
+                "description": "Для гостей — только completed/rejected. Для пользователей — только свои. Для модераторов — все.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "power-calculations"
+                ],
+                "summary": "Получить список заявок",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Фильтр по статусу (через запятую)",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата формирования от (формат: 2025-01-01)",
+                        "name": "from_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Дата формирования до (формат: 2025-12-31)",
+                        "name": "to_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/http.PowerCalculationResponse"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/power-calculations/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Возвращает полную информацию о заявке с услугами и количеством",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "power-calculations"
+                ],
+                "summary": "Получить заявку по ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.PowerCalculationResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Изменяет параметры ЦОД (только для черновиков)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "power-calculations"
+                ],
+                "summary": "Обновить поля заявки",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Поля для обновления",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/http.UpdateCalculationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Удаляет черновик (только создатель)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "power-calculations"
+                ],
+                "summary": "Удалить заявку",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/power-calculations/{id}/complete": {
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Вычисляет итоговую мощность, завершает заявку (только модератор)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "power-calculations"
+                ],
+                "summary": "Завершить заявку",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/power-calculations/{id}/devices": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Добавляет оборудование в черновик заявки",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "power_calculations-devices"
+                ],
+                "summary": "Добавить услугу в заявку",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные услуги",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.AddDeviceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/power-calculations/{id}/devices/{device_id}": {
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Обновляет количество оборудования в заявке",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "power_calculations-devices"
+                ],
+                "summary": "Изменить количество услуги в заявке",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID услуги",
+                        "name": "device_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Новое количество",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.UpdateDeviceQuantityRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Удаляет оборудование из заявки",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "power_calculations-devices"
+                ],
+                "summary": "Удалить услугу из заявки",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID услуги",
+                        "name": "device_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/power-calculations/{id}/form": {
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Переводит черновик в статус \"formed\" (только создатель)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "power-calculations"
+                ],
+                "summary": "Сформировать заявку",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/power-calculations/{id}/reject": {
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Отклоняет сформированную заявку (только модератор)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "power-calculations"
+                ],
+                "summary": "Отклонить заявку",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID заявки",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/login": {
+            "post": {
+                "description": "Возвращает JWT-токен для авторизации",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Аутентификация",
+                "parameters": [
+                    {
+                        "description": "Данные для входа",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.LoginResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/logout": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Добавляет токен в blacklist (Redis)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Выход из системы",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Возвращает данные авторизованного пользователя",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Получить профиль текущего пользователя",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.UserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Обновляет поля профиля (например, username)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Обновить профиль",
+                "parameters": [
+                    {
+                        "description": "Поля для обновления",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/http.UpdateUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/register": {
+            "post": {
+                "description": "Создаёт нового пользователя с ролью \"user\"",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Регистрация нового пользователя",
+                "parameters": [
+                    {
+                        "description": "Данные регистрации",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/http.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/http.SuccessMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/http.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "http.AddDeviceRequest": {
+            "type": "object",
+            "properties": {
+                "device_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "quantity": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "http.CartResponse": {
+            "type": "object",
+            "properties": {
+                "calculation_id": {
+                    "type": "integer",
+                    "example": 5
+                },
+                "total_items": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "http.CreateDeviceRequest": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "example": "Сервер"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Описание"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Новый сервер"
+                },
+                "power_watt": {
+                    "type": "integer",
+                    "example": 1000
+                }
+            }
+        },
+        "http.DeviceResponse": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "power_watt": {
+                    "type": "integer"
+                }
+            }
+        },
+        "http.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "invalid credentials"
+                }
+            }
+        },
+        "http.ImageUploadResponse": {
+            "type": "object",
+            "properties": {
+                "image_url": {
+                    "type": "string",
+                    "example": "http://localhost:8050/devices/..."
+                }
+            }
+        },
+        "http.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "example": "user"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "user"
+                }
+            }
+        },
+        "http.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string",
+                    "example": "eyJ..."
+                },
+                "token_type": {
+                    "type": "string",
+                    "example": "Bearer"
+                }
+            }
+        },
+        "http.PowerCalculationResponse": {
+            "type": "object",
+            "properties": {
+                "completed_at": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "creator": {
+                    "type": "string"
+                },
+                "devices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.DeviceWithQuantity"
+                    }
+                },
+                "formed_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "moderator": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/model.CalculationStatus"
+                },
+                "total_power": {
+                    "type": "integer"
+                }
+            }
+        },
+        "http.RegisterRequest": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "example": "secure123"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "newuser"
+                }
+            }
+        },
+        "http.SuccessMessage": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "updated"
+                }
+            }
+        },
+        "http.UpdateCalculationRequest": {
+            "type": "object",
+            "properties": {
+                "dc_description": {
+                    "type": "string",
+                    "example": "Описание ЦОД"
+                },
+                "dc_name": {
+                    "type": "string",
+                    "example": "Мой ЦОД"
+                },
+                "pue": {
+                    "type": "number",
+                    "example": 1.55
+                }
+            }
+        },
+        "http.UpdateDeviceQuantityRequest": {
+            "type": "object",
+            "properties": {
+                "quantity": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
+        "http.UpdateDeviceRequest": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string",
+                    "example": "СХД"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Новое описание"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Обновлённый сервер"
+                },
+                "power_watt": {
+                    "type": "integer",
+                    "example": 1100
+                }
+            }
+        },
+        "http.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "type": "string",
+                    "example": "newUserName"
+                }
+            }
+        },
+        "http.UserResponse": {
+            "type": "object",
+            "properties": {
+                "role": {
+                    "type": "string",
+                    "example": "user"
+                },
+                "user_id": {
+                    "type": "integer",
+                    "example": 1
+                },
+                "username": {
+                    "type": "string",
+                    "example": "user"
+                }
+            }
+        },
+        "model.CalculationStatus": {
+            "type": "string",
+            "enum": [
+                "draft",
+                "deleted",
+                "formed",
+                "completed",
+                "rejected"
+            ],
+            "x-enum-varnames": [
+                "StatusDraft",
+                "StatusDeleted",
+                "StatusFormed",
+                "StatusCompleted",
+                "StatusRejected"
+            ]
+        },
+        "model.DeviceWithQuantity": {
+            "type": "object",
+            "properties": {
+                "category": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "power_watt": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "Bearer": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

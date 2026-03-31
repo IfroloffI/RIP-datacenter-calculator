@@ -1,0 +1,56 @@
+services:
+  minio:
+    image: quay.io/minio/minio:RELEASE.2022-10-15T19-57-03Z
+    container_name: rip-minio
+    ports:
+      - "8050:9000"
+      - "8051:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio_data:/data
+      - ./config:/root/.minio
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+  postgres:
+    image: postgres:18
+    container_name: rip-postgres-18
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: rip
+    ports:
+      - "8082:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+    restart: unless-stopped
+
+  adminer:
+    image: adminer:latest
+    container_name: rip-adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+
+  redis:
+    image: redis:alpine
+    container_name: rip-redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_DATABASE=0
+      - REDIS_PASSWORD=secret
+    command: redis-server --requirepass secret
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  minio_data:
+    name: rip-minio-volume
+  postgres_data:
+    name: rip-postgre-volume
+  redis_data:
+    name: rip-redis-volume
